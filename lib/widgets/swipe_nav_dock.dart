@@ -31,9 +31,10 @@ class SwipeNavDock extends StatelessWidget {
                   color: isSelected ? Colors.blue : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(
-                  manager.items[index],
-                  style: TextStyle(color: Colors.white, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal),
+                child: Icon(
+                  manager.items[index].icon,
+                  color: isSelected ? Colors.white : Colors.grey[400],
+                  size: 28,
                 ),
               ),
             );
