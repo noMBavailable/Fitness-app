@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/custom_header.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -6,47 +7,36 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      
       children: [
-        // --- CUSTOM HEADER ---
-        Container(
-          margin: const EdgeInsets.only(top: 50),
-          padding: const EdgeInsets.only(top: 10, bottom: 10, left: 10, right: 10),
-          decoration: BoxDecoration(
-            // Matching your navigation bar style
-            color: Colors.black.withValues(alpha:0.7), 
-       
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        const CustomHeader(title: "Home"),
+        
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.all(20),
             children: [
-              // Settings Button
-              IconButton(
-                icon: const Icon(Icons.settings, size: 30,color: Colors.white),
-                onPressed: () => print("Settings pressed"),
+              Center(
+                child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children : const [
+                  Text(
+                "Next workout",
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
               ),
-              
-              // Title
-              const Text(
-                "Home", // change font to something more pleasant
-                style: TextStyle(
-                  color: Colors.white, 
-                  fontSize: 27, 
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.2,
-                ),
-              ),
-
-              // Quit Button
-              IconButton(
-                icon: const Icon(Icons.logout, size: 30,color: Colors.white),
-                onPressed: () => print("Quit pressed"),
+              SizedBox(height: 30),
+              Text(
+                "24 minutes",
+                style: TextStyle(fontSize: 18, color: Colors.grey),
               ),
             ],
           ),
-        ),
-        // --- MAIN CONTENT ---
+        )
+              
+              
+              // const SizedBox(height: 30),
+            ],
+          ),
+        )
       ],
     );
-  }
+  }  
 }
