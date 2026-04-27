@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'managers/nav_manager.dart';
 import 'widgets/swipe_nav_dock.dart';
 import 'screens/home_screen.dart';
-import 'widgets/weight_modal.dart'; // Ensure this file exists in your widgets folder
+import 'widgets/weight_modal.dart'; 
+import 'widgets/exercise_modal.dart'; 
 
 void main() => runApp(const FitnessApp());
 
@@ -28,8 +29,9 @@ class FitnessHomeScreen extends StatefulWidget {
 class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
   final NavManager _navManager = NavManager();
   
-  // Removed 'final' so we can change this value
+  // Removed 'final' to edit these values
   bool _showWeightModal = false;
+  bool _showExerciseModal = false;
 
   final List<Widget> _pages = [
     const HomeScreen(),
@@ -45,12 +47,15 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
     // Listen to changes in the NavManager
     _navManager.addListener(() {
       setState(() {
+        _showWeightModal = false;
+        _showExerciseModal = false;
+
         // If index 2 (Weight) is selected, show the modal
         if (_navManager.currentIndex == 2) {
           _showWeightModal = true;
-        } else {
+        } else if(_navManager.currentIndex == 3) {
           // If any other tab is selected, hide the modal
-          _showWeightModal = false;
+          _showExerciseModal = true;
         }
       });
     });
@@ -74,10 +79,15 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
 
           // 2. THE FLOATING MODAL
           if (_showWeightModal) 
-            Align(
+            const Align(
               // Adjust 0.6 horizontally and 0.5 vertically to line up with your button
-              alignment: const Alignment(0.4, 0.5), 
-              child: const WeightModal(),
+              alignment: Alignment(0.4, 0.5), 
+              child: WeightModal(),
+            ),
+          if (_showExerciseModal)
+            const Align(
+              alignment: Alignment(0.4, 0.5),
+              child: ExerciseModal(),
             ),
           
           // 3. The floating navigation bar
