@@ -33,6 +33,8 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
   bool _showWeightModal = false;
   bool _showExerciseModal = false;
 
+  int _actualCurrentPage = 0;
+
   final List<Widget> _pages = [
     const HomeScreen(),
     const Center(child: Text("Workout Page")),
@@ -41,25 +43,31 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
   ];
 
   @override
-  void initState() {
-    super.initState();
-    
-    // Listen to changes in the NavManager
-    _navManager.addListener(() {
-      setState(() {
+void initState() {
+  super.initState();
+  _navManager.addListener(() {
+    setState(() {
+      int newIndex = _navManager.currentIndex;
+
+      // MAKE THIS BETTER
+
+      // 1. Check if the button pressed is a "Modal Button"
+      if (newIndex == 2) { 
+        _showWeightModal = true;
+        _showExerciseModal = false;
+        // DO NOT update a local _currentIndex variable here
+      } else if (newIndex == 3) {
+        _showExerciseModal = true;
+        _showWeightModal = false;
+      } else {
+        // 2. Only change the background page for Home (0) or Workout (1)
         _showWeightModal = false;
         _showExerciseModal = false;
-
-        // If index 2 (Weight) is selected, show the modal
-        if (_navManager.currentIndex == 2) {
-          _showWeightModal = true;
-        } else if(_navManager.currentIndex == 3) {
-          // If any other tab is selected, hide the modal
-          _showExerciseModal = true;
-        }
-      });
+        _actualCurrentPage = newIndex; 
+      }
     });
-  }
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +82,7 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
                 setState(() => _showWeightModal = false);
               }
             },
-            child: _pages[_navManager.currentIndex],
+            child: _pages[_actualCurrentPage],
           ),
 
           // 2. THE FLOATING MODAL
