@@ -1,5 +1,6 @@
 // This would be a new widget file: lib/widgets/weight_modal.dart
 import 'package:flutter/material.dart';
+import '../screens/weight_graph_screen.dart'; // Add this import
 
 class WeightModal extends StatelessWidget {
   const WeightModal({super.key});
@@ -42,7 +43,14 @@ class WeightModal extends StatelessWidget {
               // History Section
               const Text("Weight History", style: TextStyle(fontSize: 12, color: Colors.grey)),
               TextButton(
-                onPressed: () => print("Go to Graph"),
+                onPressed: () {
+                  Navigator.pop(context); // check to see if modal is closed or not
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const WeightGraphScreen()),
+                  );
+                },
                 child: const Text("View Graph →"),
               ),
             ],
