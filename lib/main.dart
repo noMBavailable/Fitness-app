@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+
+// Managers
 import 'managers/nav_manager.dart';
+import 'managers/weight_manager.dart';
+
+// Widgets & Screens
 import 'widgets/swipe_nav_dock.dart';
 import 'screens/home_screen.dart';
 import 'widgets/weight_modal.dart'; 
@@ -14,7 +19,7 @@ class FitnessApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false, 
-      home: FitnessHomeScreen(),
+      home: const FitnessHomeScreen(),
     );
   }
 }
@@ -27,14 +32,16 @@ class FitnessHomeScreen extends StatefulWidget {
 }
 
 class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
+  // 1. OBJECT INSTANCES (OOP Managers)
   final NavManager _navManager = NavManager();
-  
-  // Removed 'final' to edit these values
+  final WeightManager _weightManager = WeightManager();
+
+  // 2. STATE VARIABLES
   bool _showWeightModal = false;
   bool _showExerciseModal = false;
-
   int _actualCurrentPage = 0;
 
+  // 3. PAGE LIST
   final List<Widget> _pages = [
     const HomeScreen(),
     const Center(child: Text("Workout Page")),
@@ -43,31 +50,30 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
   ];
 
   @override
-void initState() {
-  super.initState();
-  _navManager.addListener(() {
-    setState(() {
-      int newIndex = _navManager.currentIndex;
+  void initState() {
+    super.initState();
+    
+    // Listen to changes in the navigation bar
+    _navManager.addListener(() {
+      setState(() {
+        int newIndex = _navManager.currentIndex;
 
-      // MAKE THIS BETTER
-
-      // 1. Check if the button pressed is a "Modal Button"
-      if (newIndex == 2) { 
-        _showWeightModal = true;
-        _showExerciseModal = false;
-        // DO NOT update a local _currentIndex variable here
-      } else if (newIndex == 3) {
-        _showExerciseModal = true;
-        _showWeightModal = false;
-      } else {
-        // 2. Only change the background page for Home (0) or Workout (1)
-        _showWeightModal = false;
-        _showExerciseModal = false;
-        _actualCurrentPage = newIndex; 
-      }
+        // Logic: Tabs 2 and 3 trigger modals. 0 and 1 change the actual background screen.
+        if (newIndex == 2) { 
+          _showWeightModal = true;
+          _showExerciseModal = false;
+        } else if (newIndex == 3) {
+          _showExerciseModal = true;
+          _showWeightModal = false;
+        } else {
+          // Reset modals and switch the background page
+          _showWeightModal = false;
+          _showExerciseModal = false;
+          _actualCurrentPage = newIndex; 
+        }
+      });
     });
-  });
-}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,30 +81,36 @@ void initState() {
       backgroundColor: Colors.grey[200],
       body: Stack(
         children: [
-          // 1. The main content (wrapped in detector to close modal on tap)
+          // LAYER 1: THE MAIN CONTENT
+          // Uses _actualCurrentPage so the background stays put when modals open
           GestureDetector(
             onTap: () {
-              if (_showWeightModal) {
-                setState(() => _showWeightModal = false);
+              if (_showWeightModal || _showExerciseModal) {
+                setState(() {
+                  _showWeightModal = false;
+                  _showExerciseModal = false;
+                });
               }
             },
             child: _pages[_actualCurrentPage],
           ),
 
-          // 2. THE FLOATING MODAL
+          // LAYER 2: THE WEIGHT MODAL
           if (_showWeightModal) 
-            const Align(
-              // Adjust 0.6 horizontally and 0.5 vertically to line up with your button
-              alignment: Alignment(0.4, 0.5), 
-              child: WeightModal(),
+            Align(
+              alignment: const Alignment(0.4, 0.5), 
+              // No 'const' because _weightManager is a class instance
+              child: WeightModal(manager: _weightManager), 
             ),
+
+          // LAYER 3: THE EXERCISE MODAL
           if (_showExerciseModal)
             const Align(
-              alignment: Alignment(0.4, 0.5),
+              alignment: Alignment(0.8, 0.5), // Positioned above the 4th button
               child: ExerciseModal(),
             ),
           
-          // 3. The floating navigation bar
+          // LAYER 4: THE FLOATING NAVBAR
           Align(
             alignment: const Alignment(0, 0.85),
             child: SwipeNavDock(manager: _navManager),

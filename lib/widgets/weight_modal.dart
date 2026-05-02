@@ -1,30 +1,34 @@
 // This would be a new widget file: lib/widgets/weight_modal.dart
 import 'package:flutter/material.dart';
 import '../screens/weight_graph_screen.dart'; // Add this import
+import '../managers/weight_manager.dart';
 
 class WeightModal extends StatelessWidget {
-  const WeightModal({super.key});
+  final WeightManager manager;
+  final TextEditingController _controller = TextEditingController();
+
+  WeightModal({super.key, required this.manager});
+  
 
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 1. THE BUBBLE
         Container(
           width: 220,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10)],
+            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
           ),
           child: Column(
             children: [
               const Text("Current Weight", style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
-              // Input Field
               TextField(
+                controller: _controller, // Link the controller
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   hintText: "kg",
@@ -33,22 +37,26 @@ class WeightModal extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              // Confirm Button
               ElevatedButton(
-                onPressed: () {}, 
+                onPressed: () {
+                  // Save the weight when pressed
+                  double? value = double.tryParse(_controller.text);
+                  if (value != null) {
+                    manager.addWeight(value);
+                    _controller.clear();
+                    FocusScope.of(context).unfocus(); // Close keyboard
+                  }
+                }, 
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
-                child: const Text("Confirm"),
+                child: const Text("Confirm", style: TextStyle(color: Colors.white)),
               ),
               const Divider(),
-              // History Section
               const Text("Weight History", style: TextStyle(fontSize: 12, color: Colors.grey)),
               TextButton(
                 onPressed: () {
-                  Navigator.pop(context); // check to see if modal is closed or not
-
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const WeightGraphScreen()),
+                    MaterialPageRoute(builder: (context) => WeightGraphScreen(manager: manager)),
                   );
                 },
                 child: const Text("View Graph →"),
@@ -56,9 +64,9 @@ class WeightModal extends StatelessWidget {
             ],
           ),
         ),
-        // 2. THE ARROW (A small triangle)
         const Icon(Icons.arrow_drop_down, color: Colors.white, size: 30),
       ],
     );
   }
 }
+  
