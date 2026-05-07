@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import '../screens/edit_workout_screen.dart';   
-import '../screens/edit_exercise_screen.dart';
-
+import '../screens/exercise_creation_screen.dart';
+import '../managers/exercise_manager.dart';
 class ExerciseModal extends StatelessWidget {
-  const ExerciseModal({super.key});
+
+  final ExerciseManager manager;
+
+  const ExerciseModal({super.key, required this.manager});
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +49,7 @@ class ExerciseModal extends StatelessWidget {
                   // Navigator.push moves to the new screen
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const EditExerciseScreen()),
+                    MaterialPageRoute(builder: (context) =>  ExerciseCreationScreen(manager: manager)),
                   );
                 },
               ),
