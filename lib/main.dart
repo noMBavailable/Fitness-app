@@ -9,7 +9,8 @@ import 'widgets/swipe_nav_dock.dart';
 import 'screens/home_screen.dart';
 import 'widgets/weight_modal.dart'; 
 import 'widgets/exercise_modal.dart'; 
-import 'managers/exercise_manager.dart'; // <--- Add this!
+import 'managers/exercise_manager.dart'; 
+import 'managers/workout_manager.dart';
 
 void main() => runApp(const FitnessApp());
 
@@ -37,6 +38,7 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
   final NavManager _navManager = NavManager();
   final WeightManager _weightManager = WeightManager();
   final ExerciseManager _exerciseManager = ExerciseManager();
+  final WorkoutManager _workoutManager = WorkoutManager();
 
   // 2. STATE VARIABLES
   bool _showWeightModal = false;
@@ -109,7 +111,7 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
           if (_showExerciseModal)
             Align(
               alignment:  const Alignment(0.8, 0.5), // Positioned above the 4th button
-              child: ExerciseModal(manager: _exerciseManager),
+              child: ExerciseModal(manager: _exerciseManager, manager2: _workoutManager),
             ),
           
           // LAYER 4: THE FLOATING NAVBAR
