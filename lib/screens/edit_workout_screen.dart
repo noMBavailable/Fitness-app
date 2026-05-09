@@ -3,6 +3,7 @@ import '../managers/exercise_manager.dart';
 import '../managers/workout_manager.dart';
 import '../models/exercise_model.dart';
 import '../models/workout_model.dart';
+import '../widgets/custom_header.dart';
 
 class EditWorkoutScreen extends StatefulWidget {
   final ExerciseManager exerciseManager;

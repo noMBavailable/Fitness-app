@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../managers/weight_manager.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../widgets/custom_header.dart';
 
 class WeightGraphScreen extends StatelessWidget {
   final WeightManager manager;
@@ -10,9 +11,10 @@ class WeightGraphScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Weight History")),
+      
       body: Column(
         children: [
+          const CustomHeader(title: "Weight history"),
           // THE GRAPH SECTION
           Container(
             height: 300,

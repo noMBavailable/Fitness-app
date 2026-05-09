@@ -3,6 +3,7 @@ import 'package:table_calendar/table_calendar.dart';
 import '../managers/agenda_manager.dart';
 import '../managers/workout_manager.dart';
 import '../models/workout_model.dart';
+import '../widgets/custom_header.dart';
 
 class AgendaScreen extends StatefulWidget {
   final AgendaManager agendaManager;
@@ -22,9 +23,9 @@ class _AgendaScreenState extends State<AgendaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Workout Agenda")),
       body: Column(
         children: [
+          const CustomHeader(title: "Agenda"),
           TableCalendar(
             firstDay: DateTime.utc(2020, 1, 1),
             lastDay: DateTime.utc(2030, 12, 31),
