@@ -11,6 +11,9 @@ import 'widgets/weight_modal.dart';
 import 'widgets/exercise_modal.dart'; 
 import 'managers/exercise_manager.dart'; 
 import 'managers/workout_manager.dart';
+import 'managers/agenda_manager.dart';
+import 'screens/agenda_screen.dart';
+import 'screens/weight_graph_screen.dart';
 
 void main() => runApp(const FitnessApp());
 
@@ -39,23 +42,30 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
   final WeightManager _weightManager = WeightManager();
   final ExerciseManager _exerciseManager = ExerciseManager();
   final WorkoutManager _workoutManager = WorkoutManager();
+  final AgendaManager _agendaManager = AgendaManager();
 
   // 2. STATE VARIABLES
   bool _showWeightModal = false;
   bool _showExerciseModal = false;
   int _actualCurrentPage = 0;
 
-  // 3. PAGE LIST
-  final List<Widget> _pages = [
-    const HomeScreen(),
-    const Center(child: Text("Workout Page")),
-    const Center(child: Text("Weight Page Content")),
-    const Center(child: Text("Settings Page")),
-  ];
+  // 3. PAGE LIST // changed from final to late
+  late List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
+
+    _pages = [
+      const HomeScreen(),
+      AgendaScreen(
+        agendaManager: _agendaManager, 
+        workoutManager: _workoutManager
+      ),
+      WeightGraphScreen(manager: _weightManager),
+      const Center(child: Text("Settings Page")),
+    ];
+
     
     // Listen to changes in the navigation bar
     _navManager.addListener(() {
