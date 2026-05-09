@@ -3,17 +3,17 @@ import 'package:flutter/material.dart';
 // Managers
 import 'managers/nav_manager.dart';
 import 'managers/weight_manager.dart';
+import 'managers/exercise_manager.dart'; 
+import 'managers/workout_manager.dart';
+import 'managers/agenda_manager.dart';
 
 // Widgets & Screens
 import 'widgets/swipe_nav_dock.dart';
 import 'screens/home_screen.dart';
-import 'widgets/weight_modal.dart'; 
-import 'widgets/exercise_modal.dart'; 
-import 'managers/exercise_manager.dart'; 
-import 'managers/workout_manager.dart';
-import 'managers/agenda_manager.dart';
 import 'screens/agenda_screen.dart';
 import 'screens/weight_graph_screen.dart';
+import 'widgets/weight_modal.dart'; 
+import 'widgets/exercise_modal.dart'; 
 
 void main() => runApp(const FitnessApp());
 
@@ -24,6 +24,7 @@ class FitnessApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false, 
+      theme: ThemeData(useMaterial3: true, primarySwatch: Colors.blue),
       home: const FitnessHomeScreen(),
     );
   }
@@ -37,7 +38,7 @@ class FitnessHomeScreen extends StatefulWidget {
 }
 
 class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
-  // 1. OBJECT INSTANCES (OOP Managers)
+  // 1. OBJECT INSTANCES
   final NavManager _navManager = NavManager();
   final WeightManager _weightManager = WeightManager();
   final ExerciseManager _exerciseManager = ExerciseManager();
@@ -49,7 +50,7 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
   bool _showExerciseModal = false;
   int _actualCurrentPage = 0;
 
-  // 3. PAGE LIST // changed from final to late
+  // 3. PAGE LIST (Initialized in initState to safely access managers)
   late List<Widget> _pages;
 
   @override
@@ -63,16 +64,15 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
         workoutManager: _workoutManager
       ),
       WeightGraphScreen(manager: _weightManager),
-      const Center(child: Text("Settings Page")),
+      const Center(child: Text("Settings Page")), 
     ];
 
-    
     // Listen to changes in the navigation bar
     _navManager.addListener(() {
       setState(() {
         int newIndex = _navManager.currentIndex;
 
-        // Logic: Tabs 2 and 3 trigger modals. 0 and 1 change the actual background screen.
+        // Logic: Tabs 2 and 3 trigger modals. 0 and 1 change the background screen.
         if (newIndex == 2) { 
           _showWeightModal = true;
           _showExerciseModal = false;
@@ -80,7 +80,7 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
           _showExerciseModal = true;
           _showWeightModal = false;
         } else {
-          // Reset modals and switch the background page
+          // Normal navigation: Hide modals and switch page
           _showWeightModal = false;
           _showExerciseModal = false;
           _actualCurrentPage = newIndex; 
@@ -95,8 +95,7 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
       backgroundColor: Colors.grey[200],
       body: Stack(
         children: [
-          // LAYER 1: THE MAIN CONTENT
-          // Uses _actualCurrentPage so the background stays put when modals open
+          // LAYER 1: THE MAIN CONTENT (Agenda, Home, Graph)
           GestureDetector(
             onTap: () {
               if (_showWeightModal || _showExerciseModal) {
@@ -112,21 +111,21 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
           // LAYER 2: THE WEIGHT MODAL
           if (_showWeightModal) 
             Align(
-              alignment: const Alignment(0.4, 0.5), 
-              // No 'const' because _weightManager is a class instance
+              alignment: const Alignment(0, 0.4), 
               child: WeightModal(manager: _weightManager), 
             ),
 
           // LAYER 3: THE EXERCISE MODAL
           if (_showExerciseModal)
             Align(
-              alignment:  const Alignment(0.8, 0.5), // Positioned above the 4th button
+              alignment: const Alignment(0, 0.4),
               child: ExerciseModal(manager: _exerciseManager, manager2: _workoutManager),
             ),
           
-          // LAYER 4: THE FLOATING NAVBAR
+          // LAYER 4: THE GLOBAL FLOATING NAVBAR
+          // This stays visible on top of every screen in Layer 1
           Align(
-            alignment: const Alignment(0, 0.85),
+            alignment: const Alignment(0, 0.92), // Positioned near the bottom
             child: SwipeNavDock(manager: _navManager),
           ),
         ],

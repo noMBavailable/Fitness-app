@@ -3,6 +3,7 @@ import '../managers/exercise_manager.dart';
 import '../managers/workout_manager.dart';
 import '../models/exercise_model.dart';
 import '../models/workout_model.dart';
+import '../widgets/swipe_nav_dock.dart';
 import '../widgets/custom_header.dart';
 
 class EditWorkoutScreen extends StatefulWidget {
@@ -101,15 +102,15 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
     final workouts = widget.workoutManager.workouts;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("My Workouts")),
       // BOTTOM RIGHT BUTTON
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showWorkoutForm(),
         child: const Icon(Icons.add),
       ),
-      body: workouts.isEmpty
-          ? const Center(child: Text("No workouts created yet."))
-          : ListView.builder(
+      body: Column(
+        children: [
+        const CustomHeader(title: "Edit Workouts"),
+         workouts.isEmpty ? const Center(child: Text("No workouts created yet.")) : ListView.builder(
               itemCount: workouts.length,
               itemBuilder: (context, index) {
                 final workout = workouts[index];
@@ -137,6 +138,12 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                 );
               },
             ),
+
+
+
+      ],)
+      
+      
     );
   }
 }

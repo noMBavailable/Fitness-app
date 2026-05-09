@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../managers/exercise_manager.dart';
 import '../models/exercise_model.dart';
+import '../widgets/custom_header.dart';
+import '../widgets/swipe_nav_dock.dart';
 
 class ExerciseCreationScreen extends StatefulWidget {
   final ExerciseManager manager;
@@ -31,20 +33,45 @@ class _ExerciseCreationScreenState extends State<ExerciseCreationScreen> {
       context: context,
       isScrollControlled: true,
       builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 20, right: 20, top: 20),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          left: 20,
+          right: 20,
+          top: 20,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Exercise Name')),
-            TextField(controller: _repsController, decoration: const InputDecoration(labelText: 'Reps'), keyboardType: TextInputType.number),
-            TextField(controller: _weightController, decoration: const InputDecoration(labelText: 'Weight (kg)'), keyboardType: TextInputType.number),
+            TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(labelText: 'Exercise Name'),
+            ),
+            TextField(
+              controller: _repsController,
+              decoration: const InputDecoration(labelText: 'Reps'),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: _weightController,
+              decoration: const InputDecoration(labelText: 'Weight (kg)'),
+              keyboardType: TextInputType.number,
+            ),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
                 if (exercise == null) {
-                  widget.manager.addExercise(_nameController.text, int.parse(_repsController.text), double.parse(_weightController.text));
+                  widget.manager.addExercise(
+                    _nameController.text,
+                    int.parse(_repsController.text),
+                    double.parse(_weightController.text),
+                  );
                 } else {
-                  widget.manager.updateExercise(exercise.id, _nameController.text, int.parse(_repsController.text), double.parse(_weightController.text));
+                  widget.manager.updateExercise(
+                    exercise.id,
+                    _nameController.text,
+                    int.parse(_repsController.text),
+                    double.parse(_weightController.text),
+                  );
                 }
                 Navigator.pop(context);
                 setState(() {}); // Refresh list
@@ -61,30 +88,42 @@ class _ExerciseCreationScreenState extends State<ExerciseCreationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("My Exercises")),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showExerciseForm(),
         child: const Icon(Icons.add),
       ),
-      body: ListView.builder(
-        itemCount: widget.manager.exercises.length,
-        itemBuilder: (ctx, i) {
-          final ex = widget.manager.exercises[i];
-          return ListTile(
-            title: Text(ex.name),
-            subtitle: Text("${ex.reps} reps @ ${ex.weight} kg"),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(icon: const Icon(Icons.edit), onPressed: () => _showExerciseForm(exercise: ex)),
-                IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () {
-                  widget.manager.deleteExercise(ex.id);
-                  setState(() {});
-                }),
-              ],
+      body: Column(
+        children: [
+          const CustomHeader(title: "My Exercises"),
+          Expanded(
+            child: ListView.builder(
+              itemCount: widget.manager.exercises.length,
+              itemBuilder: (ctx, i) {
+                final ex = widget.manager.exercises[i];
+                return ListTile(
+                  title: Text(ex.name),
+                  subtitle: Text("${ex.reps} reps @ ${ex.weight} kg"),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () => _showExerciseForm(exercise: ex),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () {
+                          widget.manager.deleteExercise(ex.id);
+                          setState(() {});
+                        },
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
