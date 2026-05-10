@@ -34,8 +34,35 @@ class WeightGraphScreen extends StatelessWidget {
                     ? const Center(child: Text("No data to graph yet"))
                     : LineChart(
                         LineChartData(
-                          // ... keep your existing LineChartData ...
-                          
+                          gridData: const FlGridData(show: false),
+                      titlesData: const FlTitlesData(
+                        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        // Bottom titles can be added later to show dates
+                      ),
+                      borderData: FlBorderData(
+                        show: true,
+                        border: Border.all(color: Colors.black12),
+                      ),
+                      lineBarsData: [
+                        LineChartBarData(
+                          // Mapping history entries to graph spots
+                          spots: manager.history.asMap().entries.map((entry) {
+                            return FlSpot(
+                              entry.key.toDouble(), // X = Index in list
+                              entry.value.value.toDouble(), // Y = Weight value
+                            );
+                          }).toList(),
+                          isCurved: true,
+                          color: Colors.blueAccent,
+                          barWidth: 4,
+                          dotData: const FlDotData(show: true),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            color: Colors.blueAccent.withValues(alpha: 0.2),
+                          ),
+                        ),
+                      ],
                         ),
                       ),
               ),
