@@ -24,7 +24,10 @@ class WeightGraphScreen extends StatelessWidget {
           // LAYER 1: THE CONTENT
           Column(
             children: [
-              const CustomHeader(title: "Weight History"),
+              const CustomHeader(title: "Weight History",
+              showBackButton: true,
+              ),
+              
               
               // GRAPH SECTION
               Container(

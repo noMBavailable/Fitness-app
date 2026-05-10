@@ -1,26 +1,36 @@
 import 'package:flutter/material.dart';
 
-
 class CustomHeader extends StatelessWidget {
   final String title;
+  final bool showBackButton;
 
-  const CustomHeader({super.key, required this.title});
+  const CustomHeader({
+    super.key,
+    required this.title,
+    this.showBackButton = false, //default is false
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(top: 50),
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.7),
-      ),
+      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.7)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          IconButton(
-            icon: const Icon(Icons.settings, size: 30, color: Colors.white),
-            onPressed: () => print("Settings pressed"),
-          ),
+          if (showBackButton) 
+            IconButton(
+              icon: const Icon(
+                Icons.arrow_back_sharp,
+                size: 30,
+                color: Colors.white,
+              ),
+              onPressed: () => print("Back pressed"),
+            )
+            else
+              const SizedBox(width: 45), // keep title centered
+
           Text(
             title,
             style: const TextStyle(
@@ -32,8 +42,8 @@ class CustomHeader extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.logout, size: 30, color: Colors.white),
-            onPressed: () => print("Quit pressed"),
+            icon: const Icon(Icons.settings, size: 30, color: Colors.white),
+            onPressed: () => print("Settings pressed"),
           ),
         ],
       ),

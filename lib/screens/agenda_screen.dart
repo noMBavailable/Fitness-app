@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../managers/agenda_manager.dart';
 import '../managers/workout_manager.dart';
-import '../models/workout_model.dart';
+// import '../models/workout_model.dart';
 import '../widgets/custom_header.dart';
-import '../widgets/swipe_nav_dock.dart';
+// import '../widgets/swipe_nav_dock.dart';
 
 class AgendaScreen extends StatefulWidget {
   final AgendaManager agendaManager;

@@ -82,7 +82,6 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                     } else {
                       workout.name = _nameController.text;
                       workout.selectedExercises = List.from(_tempSelected);
-                      widget.workoutManager.notifyListeners();
                     }
                     Navigator.pop(context);
                     setState(() {}); 
@@ -116,7 +115,9 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
         children: [
           Column(
             children: [
-              const CustomHeader(title: "Edit Workouts"),
+              const CustomHeader(title: "Edit Workouts",
+              showBackButton: true,
+              ),
               // 5. Wrap list in Expanded so it fills space without error
               Expanded(
                 child: workouts.isEmpty 

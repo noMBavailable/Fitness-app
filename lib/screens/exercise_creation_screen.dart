@@ -81,7 +81,8 @@ class _ExerciseCreationScreenState extends State<ExerciseCreationScreen> {
         children: [
           Column(
             children: [
-              const CustomHeader(title: "My Exercises"),
+              const CustomHeader(title: "My Exercises",
+              showBackButton: true,),
               Expanded(
                 child: ListView.builder(
                   // 120px padding at the bottom ensures the last exercise 
