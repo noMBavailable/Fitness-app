@@ -34,7 +34,7 @@ class _AgendaScreenState extends State<AgendaScreen> {
       
       // 5. PUSH FAB NORTH
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 90), // Pushes it above the Navbar
+        padding: const EdgeInsets.only(bottom: 100), // Pushes it above the Navbar
         child: FloatingActionButton(
           backgroundColor: Color.fromARGB(255, 75, 75, 75), // Match your dock color
           onPressed: _showSchedulePicker,
