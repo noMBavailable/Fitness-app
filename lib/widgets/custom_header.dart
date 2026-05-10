@@ -26,7 +26,8 @@ class CustomHeader extends StatelessWidget {
                 size: 30,
                 color: Colors.white,
               ),
-              onPressed: () => print("Back pressed"),
+              onPressed: () {Navigator.of(context).pop();
+              },
             )
             else
               const SizedBox(width: 45), // keep title centered

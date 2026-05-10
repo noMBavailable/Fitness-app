@@ -14,6 +14,7 @@ import 'screens/agenda_screen.dart';
 import 'screens/weight_graph_screen.dart';
 import 'widgets/weight_modal.dart';
 import 'widgets/exercise_modal.dart';
+import 'screens/notes_screen.dart';
 
 void main() => runApp(const FitnessApp());
 
@@ -47,6 +48,7 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
   final ExerciseManager _exerciseManager = ExerciseManager();
   final WorkoutManager _workoutManager = WorkoutManager();
   final AgendaManager _agendaManager = AgendaManager();
+ 
 
   // 2. STATE VARIABLES
   bool _showWeightModal = false;
@@ -65,13 +67,15 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
       const HomeScreen(),
       AgendaScreen(
         agendaManager: _agendaManager,
-        workoutManager: _workoutManager,
+        workoutManager: _workoutManager, // why is this here? ‼️
+        navManager: _navManager, // Pass navManager to AgendaScreen
       ),
       WeightGraphScreen(
         manager: _weightManager, 
         navManager: _navManager, // Fixed: passing required navManager
       ),
-      const Center(child: Text("Settings Page")),
+      const Center(child: Text("Notes Page")),
+      NotesScreen(navManager: _navManager), // Uncomment when NotesScreen is ready 
     ];
 
     // Listen to changes in the navigation bar
@@ -122,7 +126,7 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
           // LAYER 2: THE WEIGHT MODAL
           if (_showWeightModal)
             Align(
-              alignment: const Alignment(0, 0),
+              alignment: const Alignment(0, 0.65),
               child: WeightModal(
                 manager: _weightManager, 
                 navManager: _navManager, // Passed to allow Navigator.push
@@ -132,7 +136,7 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
           // LAYER 3: THE EXERCISE MODAL
           if (_showExerciseModal)
             Align(
-              alignment: const Alignment(0, 0),
+              alignment: const Alignment(0, 0.68),
               child: ExerciseModal(
                 manager: _exerciseManager,
                 manager2: _workoutManager,
