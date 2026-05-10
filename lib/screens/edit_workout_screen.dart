@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../managers/exercise_manager.dart';
 import '../managers/workout_manager.dart';
+import '../managers/nav_manager.dart'; // 1. Added
 import '../models/exercise_model.dart';
 import '../models/workout_model.dart';
 import '../widgets/swipe_nav_dock.dart';
@@ -9,11 +10,13 @@ import '../widgets/custom_header.dart';
 class EditWorkoutScreen extends StatefulWidget {
   final ExerciseManager exerciseManager;
   final WorkoutManager workoutManager;
+  final NavManager navManager; // 2. Added
 
   const EditWorkoutScreen({
     super.key,
     required this.exerciseManager,
     required this.workoutManager,
+    required this.navManager, // 3. Added
   });
 
   @override
@@ -24,7 +27,6 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
   final _nameController = TextEditingController();
   List<Exercise> _tempSelected = [];
 
-  // This opens the creation/edit form
   void _showWorkoutForm({Workout? workout}) {
     if (workout != null) {
       _nameController.text = workout.name;
@@ -37,7 +39,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => StatefulBuilder( // Needed to update checkboxes inside a modal
+      builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) => Padding(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(ctx).viewInsets.bottom,
@@ -55,7 +57,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
               const SizedBox(height: 10),
               const Text("Select Exercises:"),
               SizedBox(
-                height: 200, // Fixed height for the selection list
+                height: 200,
                 child: ListView.builder(
                   itemCount: widget.exerciseManager.exercises.length,
                   itemBuilder: (context, index) {
@@ -78,13 +80,12 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                     if (workout == null) {
                       widget.workoutManager.addWorkout(_nameController.text, _tempSelected);
                     } else {
-                      // Note: You'll need an updateWorkout method in your manager!
                       workout.name = _nameController.text;
                       workout.selectedExercises = List.from(_tempSelected);
                       widget.workoutManager.notifyListeners();
                     }
                     Navigator.pop(context);
-                    setState(() {}); // Refresh the main list
+                    setState(() {}); 
                   }
                 },
                 child: const Text("Save Workout"),
@@ -102,48 +103,65 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
     final workouts = widget.workoutManager.workouts;
 
     return Scaffold(
-      // BOTTOM RIGHT BUTTON
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showWorkoutForm(),
-        child: const Icon(Icons.add),
+      floatingActionButton: Padding(
+        // Move FAB up slightly so it doesn't overlap the dock
+        padding: const EdgeInsets.only(bottom: 90),
+        child: FloatingActionButton(
+          onPressed: () => _showWorkoutForm(),
+          child: const Icon(Icons.add),
+        ),
       ),
-      body: Column(
+      // 4. Wrap body in a Stack to float the Navbar
+      body: Stack(
         children: [
-        const CustomHeader(title: "Edit Workouts"),
-         workouts.isEmpty ? const Center(child: Text("No workouts created yet.")) : ListView.builder(
-              itemCount: workouts.length,
-              itemBuilder: (context, index) {
-                final workout = workouts[index];
-                return ListTile(
-                  leading: const Icon(Icons.fitness_center),
-                  title: Text(workout.name),
-                  subtitle: Text("${workout.selectedExercises.length} Exercises"),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: () => _showWorkoutForm(workout: workout),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () {
-                          setState(() {
-                            widget.workoutManager.deleteWorkout(workout.id);
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
+          Column(
+            children: [
+              const CustomHeader(title: "Edit Workouts"),
+              // 5. Wrap list in Expanded so it fills space without error
+              Expanded(
+                child: workouts.isEmpty 
+                  ? const Center(child: Text("No workouts created yet.")) 
+                  : ListView.builder(
+                      // 6. Padding at bottom so last item isn't hidden by dock
+                      padding: const EdgeInsets.only(bottom: 120),
+                      itemCount: workouts.length,
+                      itemBuilder: (context, index) {
+                        final workout = workouts[index];
+                        return ListTile(
+                          leading: const Icon(Icons.fitness_center),
+                          title: Text(workout.name),
+                          subtitle: Text("${workout.selectedExercises.length} Exercises"),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit),
+                                onPressed: () => _showWorkoutForm(workout: workout),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () {
+                                  setState(() {
+                                    widget.workoutManager.deleteWorkout(workout.id);
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+              ),
+            ],
+          ),
 
-
-
-      ],)
-      
-      
+          // 7. Added the Navbar layer
+          Align(
+            alignment: const Alignment(0, 0.92),
+            child: SwipeNavDock(manager: widget.navManager),
+          ),
+        ],
+      ),
     );
   }
 }

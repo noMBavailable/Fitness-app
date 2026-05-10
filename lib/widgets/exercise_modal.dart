@@ -3,12 +3,14 @@ import '../screens/edit_workout_screen.dart';
 import '../screens/exercise_creation_screen.dart';
 import '../managers/exercise_manager.dart';
 import '../managers/workout_manager.dart';
+import "../managers/nav_manager.dart";
 class ExerciseModal extends StatelessWidget {
 
   final ExerciseManager manager;
   final WorkoutManager manager2;
+  final NavManager navManager;
 
-  const ExerciseModal({super.key, required this.manager, required this.manager2});
+  const ExerciseModal({super.key, required this.manager, required this.manager2, required this.navManager});
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +38,7 @@ class ExerciseModal extends StatelessWidget {
                   // Navigator.push moves to the new screen
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => EditWorkoutScreen(workoutManager: manager2, exerciseManager: manager,)),
+                    MaterialPageRoute(builder: (context) => EditWorkoutScreen(workoutManager: manager2, exerciseManager: manager, navManager: navManager,)),
                   );
                 },
               ),
@@ -51,7 +53,7 @@ class ExerciseModal extends StatelessWidget {
                   // Navigator.push moves to the new screen
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) =>  ExerciseCreationScreen(manager: manager)),
+                    MaterialPageRoute(builder: (context) =>  ExerciseCreationScreen(manager: manager, navManager: navManager,)),
                   );
                 },
               ),

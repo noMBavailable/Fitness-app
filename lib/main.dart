@@ -136,6 +136,7 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
               child: ExerciseModal(
                 manager: _exerciseManager,
                 manager2: _workoutManager,
+                navManager: _navManager, // Passed to allow Navigator.push
                 // navManager: _navManager, // Add this if ExerciseModal needs it too
               ),
             ),

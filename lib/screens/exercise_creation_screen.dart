@@ -3,17 +3,19 @@ import '../managers/exercise_manager.dart';
 import '../models/exercise_model.dart';
 import '../widgets/custom_header.dart';
 import '../widgets/swipe_nav_dock.dart';
+import '../managers/nav_manager.dart';
 
 class ExerciseCreationScreen extends StatefulWidget {
   final ExerciseManager manager;
-  const ExerciseCreationScreen({super.key, required this.manager});
+  final NavManager navManager;
+
+  const ExerciseCreationScreen({super.key, required this.manager, required this.navManager});
 
   @override
   State<ExerciseCreationScreen> createState() => _ExerciseCreationScreenState();
 }
 
 class _ExerciseCreationScreenState extends State<ExerciseCreationScreen> {
-  // Controllers for the input fields
   final _nameController = TextEditingController();
   final _repsController = TextEditingController();
   final _weightController = TextEditingController();
@@ -33,7 +35,10 @@ class _ExerciseCreationScreenState extends State<ExerciseCreationScreen> {
       context: context,
       isScrollControlled: true,
       builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 20, right: 20, top: 20),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom, 
+          left: 20, right: 20, top: 20
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -49,7 +54,7 @@ class _ExerciseCreationScreenState extends State<ExerciseCreationScreen> {
                   widget.manager.updateExercise(exercise.id, _nameController.text, int.parse(_repsController.text), double.parse(_weightController.text));
                 }
                 Navigator.pop(context);
-                setState(() {}); // Refresh list
+                setState(() {}); 
               },
               child: Text(exercise == null ? 'Add Exercise' : 'Save Changes'),
             ),
@@ -63,39 +68,58 @@ class _ExerciseCreationScreenState extends State<ExerciseCreationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showExerciseForm(),
-        child: const Icon(Icons.add),
+      // Push the FAB up so it doesn't collide with the SwipeNavDock
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 90),
+        child: FloatingActionButton(
+          onPressed: () => _showExerciseForm(),
+          child: const Icon(Icons.add),
+        ),
       ),
-      body: Column(children: [
-        const CustomHeader(title: "My Exercises"),
-        Expanded(
-          child: ListView.builder(
-        itemCount: widget.manager.exercises.length,
-        itemBuilder: (ctx, i) {
-          final ex = widget.manager.exercises[i];
-          return ListTile(
-            title: Text(ex.name),
-            subtitle: Text("${ex.reps} reps @ ${ex.weight} kg"),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(icon: const Icon(Icons.edit), onPressed: () => _showExerciseForm(exercise: ex)),
-                IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () {
-                  widget.manager.deleteExercise(ex.id);
-                  setState(() {});
-                }),
-              ],
-            ),
-          );
-        },
+      // Using a Stack to layer the Navbar on top of the list
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              const CustomHeader(title: "My Exercises"),
+              Expanded(
+                child: ListView.builder(
+                  // 120px padding at the bottom ensures the last exercise 
+                  // is scrollable above the floating navbar
+                  padding: const EdgeInsets.only(bottom: 120),
+                  itemCount: widget.manager.exercises.length,
+                  itemBuilder: (ctx, i) {
+                    final ex = widget.manager.exercises[i];
+                    return ListTile(
+                      title: Text(ex.name),
+                      subtitle: Text("${ex.reps} reps @ ${ex.weight} kg"),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(icon: const Icon(Icons.edit), onPressed: () => _showExerciseForm(exercise: ex)),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red), 
+                            onPressed: () {
+                              widget.manager.deleteExercise(ex.id);
+                              setState(() {});
+                            }
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              )
+            ],
+          ),
+
+          // THE FLOATING NAVBAR
+          Align(
+            alignment: const Alignment(0, 0.92),
+            child: SwipeNavDock(manager: widget.navManager),
+          ),
+        ],
       ),
-        )
-         
-      ],
-      )
-      
-     
     );
   }
 }
