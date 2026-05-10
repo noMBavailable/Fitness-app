@@ -2,13 +2,14 @@
 import 'package:flutter/material.dart';
 import '../screens/weight_graph_screen.dart'; // Add this import
 import '../managers/weight_manager.dart';
+import '../managers/nav_manager.dart';
 
 class WeightModal extends StatelessWidget {
   final WeightManager manager;
   final TextEditingController _controller = TextEditingController();
+  final NavManager navManager;
 
-  WeightModal({super.key, required this.manager});
-  
+  WeightModal({super.key, required this.manager, required this.navManager});
 
   @override
   Widget build(BuildContext context) {
@@ -25,14 +26,19 @@ class WeightModal extends StatelessWidget {
           ),
           child: Column(
             children: [
-              const Text("Current Weight", style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                "Current Weight",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 10),
               TextField(
                 controller: _controller, // Link the controller
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   hintText: "kg",
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 10),
                 ),
               ),
@@ -46,17 +52,30 @@ class WeightModal extends StatelessWidget {
                     _controller.clear();
                     FocusScope.of(context).unfocus(); // Close keyboard
                   }
-                }, 
+                },
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
-                child: const Text("Confirm", style: TextStyle(color: Colors.white)),
+                child: const Text(
+                  "Confirm",
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
               const Divider(),
-              const Text("Weight History", style: TextStyle(fontSize: 12, color: Colors.grey)),
+              const Text(
+                "Weight History",
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+
+              // inside lib/widgets/weight_modal.dart
               TextButton(
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => WeightGraphScreen(manager: manager)),
+                    MaterialPageRoute(
+                      builder: (context) => WeightGraphScreen(
+                        manager: manager,
+                        navManager: navManager, // Pass it here!
+                      ),
+                    ),
                   );
                 },
                 child: const Text("View Graph →"),
@@ -69,4 +88,3 @@ class WeightModal extends StatelessWidget {
     );
   }
 }
-  

@@ -24,7 +24,10 @@ class FitnessApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(useMaterial3: true, primarySwatch: Colors.blue),
+      theme: ThemeData(
+        useMaterial3: true, 
+        primarySwatch: Colors.blue,
+      ),
       home: const FitnessHomeScreen(),
     );
   }
@@ -50,20 +53,24 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
   bool _showExerciseModal = false;
   int _actualCurrentPage = 0;
 
-  // 3. PAGE LIST (Initialized in initState to safely access managers)
+  // 3. PAGE LIST
   late List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
 
+    // Passing _navManager here fixes the 'missing_required_argument' error
     _pages = [
       const HomeScreen(),
       AgendaScreen(
         agendaManager: _agendaManager,
         workoutManager: _workoutManager,
       ),
-      WeightGraphScreen(manager: _weightManager, ),
+      WeightGraphScreen(
+        manager: _weightManager, 
+        navManager: _navManager, // Fixed: passing required navManager
+      ),
       const Center(child: Text("Settings Page")),
     ];
 
@@ -72,7 +79,12 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
       setState(() {
         int newIndex = _navManager.currentIndex;
 
-        // Logic: Tabs 2 and 3 trigger modals. 0 and 1 change the background screen.
+        // If we are on a "Pushed" screen (like Graph), 
+        // clicking a nav item should bring us back to the main stack
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+
         if (newIndex == 2) {
           _showWeightModal = true;
           _showExerciseModal = false;
@@ -80,7 +92,6 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
           _showExerciseModal = true;
           _showWeightModal = false;
         } else {
-          // Normal navigation: Hide modals and switch page
           _showWeightModal = false;
           _showExerciseModal = false;
           _actualCurrentPage = newIndex;
@@ -95,7 +106,7 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
       backgroundColor: Colors.grey[200],
       body: Stack(
         children: [
-          // LAYER 1: THE MAIN CONTENT (Agenda, Home, Graph)
+          // LAYER 1: THE MAIN CONTENT
           GestureDetector(
             onTap: () {
               if (_showWeightModal || _showExerciseModal) {
@@ -109,10 +120,13 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
           ),
 
           // LAYER 2: THE WEIGHT MODAL
-      if (_showWeightModal)
+          if (_showWeightModal)
             Align(
-              alignment: const Alignment(0, 0), // Center of screen
-              child: WeightModal(manager: _weightManager),
+              alignment: const Alignment(0, 0),
+              child: WeightModal(
+                manager: _weightManager, 
+                navManager: _navManager, // Passed to allow Navigator.push
+              ),
             ),
 
           // LAYER 3: THE EXERCISE MODAL
@@ -122,20 +136,17 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
               child: ExerciseModal(
                 manager: _exerciseManager,
                 manager2: _workoutManager,
+                // navManager: _navManager, // Add this if ExerciseModal needs it too
               ),
             ),
 
           // LAYER 4: THE GLOBAL FLOATING NAVBAR
-          // Because this is the LAST item in the Stack, it is ALWAYS on top.
           Align(
             alignment: const Alignment(0, 0.92),
             child: SwipeNavDock(manager: _navManager),
           ),
-
         ],
       ),
-
-      // LAYER 3: THE EXERCISE MODAL
     );
   }
 }
