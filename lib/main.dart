@@ -16,8 +16,7 @@ import 'screens/weight_graph_screen.dart';
 import 'widgets/weight_modal.dart';
 import 'widgets/exercise_modal.dart';
 import 'screens/notes_screen.dart';
-import 'screens/active_workout_screen.dart';
-import 'models/workout_model.dart'; //for placeholder?
+import 'screens/workout_selection_screen.dart'; // Import the new selection screen
 
 void main() => runApp(const FitnessApp());
 
@@ -59,7 +58,6 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
   void initState() {
     super.initState();
 
-    // Listen to changes in the navigation bar
     _navManager.addListener(() {
       setState(() {
         int newIndex = _navManager.currentIndex;
@@ -75,7 +73,7 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
           _showExerciseModal = true;
           _showWeightModal = false;
         } else if (newIndex == 4) {
-          // Active Workout Tab
+          // Workout Selection Tab
           _showWeightModal = false;
           _showExerciseModal = false;
           _actualCurrentPage = 3;
@@ -95,9 +93,7 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // MOVE THE PAGE LIST HERE
-    // This ensures that every time you click the nav button,
-    // the app checks if a workout has actually been created yet.
+    // Dynamic page list ensures selection screen always has the latest manager data
     final List<Widget> dynamicPages = [
       const HomeScreen(),
       AgendaScreen(
@@ -106,12 +102,12 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
         navManager: _navManager,
       ),
       WeightGraphScreen(manager: _weightManager, navManager: _navManager),
-      // Check if we have a workout to show, otherwise show a safety message
-      _workoutManager.workouts.isNotEmpty
-          ? ActiveWorkoutScreen(workout: _workoutManager.workouts.first, navManager: _navManager) // Placeholder: always takes the first workout
-          : const Scaffold(
-              body: Center(child: Text("Create a workout first!")),
-            ),
+      // REPLACED: ActiveWorkoutScreen is now WorkoutSelectionScreen
+      WorkoutSelectionScreen(
+        agendaManager: _agendaManager,
+        workoutManager: _workoutManager,
+        navManager: _navManager,
+      ),
       NotesScreen(navManager: _navManager, notesManager: _notesManager),
     ];
 
@@ -128,7 +124,6 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
                 });
               }
             },
-            // USE THE DYNAMIC LIST HERE
             child: dynamicPages[_actualCurrentPage],
           ),
 

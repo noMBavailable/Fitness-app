@@ -75,7 +75,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
             icon: const Icon(Icons.close, color: Colors.black, size: 30),
             onPressed: () {
               // FIX: Instead of pop, we switch the nav index back to Home
-              widget.navManager.setIndex(0); 
+              widget.navManager.setIndex(0); // might be Navigator.pop(context) if you want to just pop the screen
             },
           ),
         ],
