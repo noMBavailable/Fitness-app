@@ -6,6 +6,7 @@ import 'managers/weight_manager.dart';
 import 'managers/exercise_manager.dart';
 import 'managers/workout_manager.dart';
 import 'managers/agenda_manager.dart';
+import 'managers/notes_manager.dart';
 
 // Widgets & Screens
 import 'widgets/swipe_nav_dock.dart';
@@ -48,6 +49,7 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
   final ExerciseManager _exerciseManager = ExerciseManager();
   final WorkoutManager _workoutManager = WorkoutManager();
   final AgendaManager _agendaManager = AgendaManager();
+  final NotesManager _notesManager = NotesManager();
  
 
   // 2. STATE VARIABLES
@@ -74,8 +76,10 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
         manager: _weightManager, 
         navManager: _navManager, // Fixed: passing required navManager
       ),
-      const Center(child: Text("Notes Page")),
-      NotesScreen(navManager: _navManager), // Uncomment when NotesScreen is ready 
+      NotesScreen(
+        navManager: _navManager,
+        notesManager: _notesManager, // Add this line to pass the NotesManager instance
+      ), // Uncomment when NotesScreen is ready 
     ];
 
     // Listen to changes in the navigation bar
@@ -95,6 +99,10 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
         } else if (newIndex == 3) {
           _showExerciseModal = true;
           _showWeightModal = false;
+        } else if (newIndex == 4) {
+          _showWeightModal = false;
+          _showExerciseModal = false;
+          _actualCurrentPage = 3; // was newIndex
         } else {
           _showWeightModal = false;
           _showExerciseModal = false;
