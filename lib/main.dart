@@ -16,6 +16,8 @@ import 'screens/weight_graph_screen.dart';
 import 'widgets/weight_modal.dart';
 import 'widgets/exercise_modal.dart';
 import 'screens/notes_screen.dart';
+import 'screens/active_workout_screen.dart';
+import 'models/workout_model.dart'; //for placeholder?
 
 void main() => runApp(const FitnessApp());
 
@@ -26,10 +28,7 @@ class FitnessApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true, 
-        primarySwatch: Colors.blue,
-      ),
+      theme: ThemeData(useMaterial3: true, primarySwatch: Colors.blue),
       home: const FitnessHomeScreen(),
     );
   }
@@ -50,45 +49,21 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
   final WorkoutManager _workoutManager = WorkoutManager();
   final AgendaManager _agendaManager = AgendaManager();
   final NotesManager _notesManager = NotesManager();
- 
 
   // 2. STATE VARIABLES
   bool _showWeightModal = false;
   bool _showExerciseModal = false;
   int _actualCurrentPage = 0;
 
-  // 3. PAGE LIST
-  late List<Widget> _pages;
-
   @override
   void initState() {
     super.initState();
-
-    // Passing _navManager here fixes the 'missing_required_argument' error
-    _pages = [
-      const HomeScreen(),
-      AgendaScreen(
-        agendaManager: _agendaManager,
-        workoutManager: _workoutManager, // why is this here? ‼️
-        navManager: _navManager, // Pass navManager to AgendaScreen
-      ),
-      WeightGraphScreen(
-        manager: _weightManager, 
-        navManager: _navManager, // Fixed: passing required navManager
-      ),
-      NotesScreen(
-        navManager: _navManager,
-        notesManager: _notesManager, // Add this line to pass the NotesManager instance
-      ), // Uncomment when NotesScreen is ready 
-    ];
 
     // Listen to changes in the navigation bar
     _navManager.addListener(() {
       setState(() {
         int newIndex = _navManager.currentIndex;
 
-        // If we are on a "Pushed" screen (like Graph), 
-        // clicking a nav item should bring us back to the main stack
         if (Navigator.canPop(context)) {
           Navigator.pop(context);
         }
@@ -100,9 +75,15 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
           _showExerciseModal = true;
           _showWeightModal = false;
         } else if (newIndex == 4) {
+          // Active Workout Tab
           _showWeightModal = false;
           _showExerciseModal = false;
-          _actualCurrentPage = 3; // was newIndex
+          _actualCurrentPage = 3;
+        } else if (newIndex == 5) {
+          // Notes Tab
+          _showWeightModal = false;
+          _showExerciseModal = false;
+          _actualCurrentPage = 4;
         } else {
           _showWeightModal = false;
           _showExerciseModal = false;
@@ -114,11 +95,30 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // MOVE THE PAGE LIST HERE
+    // This ensures that every time you click the nav button,
+    // the app checks if a workout has actually been created yet.
+    final List<Widget> dynamicPages = [
+      const HomeScreen(),
+      AgendaScreen(
+        agendaManager: _agendaManager,
+        workoutManager: _workoutManager,
+        navManager: _navManager,
+      ),
+      WeightGraphScreen(manager: _weightManager, navManager: _navManager),
+      // Check if we have a workout to show, otherwise show a safety message
+      _workoutManager.workouts.isNotEmpty
+          ? ActiveWorkoutScreen(workout: _workoutManager.workouts.first, navManager: _navManager) // Placeholder: always takes the first workout
+          : const Scaffold(
+              body: Center(child: Text("Create a workout first!")),
+            ),
+      NotesScreen(navManager: _navManager, notesManager: _notesManager),
+    ];
+
     return Scaffold(
       backgroundColor: Colors.grey[200],
       body: Stack(
         children: [
-          // LAYER 1: THE MAIN CONTENT
           GestureDetector(
             onTap: () {
               if (_showWeightModal || _showExerciseModal) {
@@ -128,32 +128,29 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
                 });
               }
             },
-            child: _pages[_actualCurrentPage],
+            // USE THE DYNAMIC LIST HERE
+            child: dynamicPages[_actualCurrentPage],
           ),
 
-          // LAYER 2: THE WEIGHT MODAL
           if (_showWeightModal)
             Align(
               alignment: const Alignment(0, 0.65),
               child: WeightModal(
-                manager: _weightManager, 
-                navManager: _navManager, // Passed to allow Navigator.push
+                manager: _weightManager,
+                navManager: _navManager,
               ),
             ),
 
-          // LAYER 3: THE EXERCISE MODAL
           if (_showExerciseModal)
             Align(
               alignment: const Alignment(0, 0.68),
               child: ExerciseModal(
                 manager: _exerciseManager,
                 manager2: _workoutManager,
-                navManager: _navManager, // Passed to allow Navigator.push
-                // navManager: _navManager, // Add this if ExerciseModal needs it too
+                navManager: _navManager,
               ),
             ),
 
-          // LAYER 4: THE GLOBAL FLOATING NAVBAR
           Align(
             alignment: const Alignment(0, 0.92),
             child: SwipeNavDock(manager: _navManager),

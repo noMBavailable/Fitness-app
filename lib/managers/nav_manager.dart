@@ -15,6 +15,7 @@ class NavManager extends ChangeNotifier {
     NavItem(title: 'Agenda', icon: Icons.calendar_month), // agenda calendar_month
     NavItem(title: 'Weight', icon: Icons.scale_outlined), // scale scale_outlined
     NavItem(title: 'Exercises', icon: Icons.fitness_center), // dumbell fitness_center
+    NavItem(title: 'Active', icon: Icons.play_circle_outline), // active workout play_circle_outline
     NavItem(title: 'Notes', icon: Icons.notes_outlined), // notes
   ];
 
