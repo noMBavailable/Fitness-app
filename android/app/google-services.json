@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "458869922508",
+    "project_id": "fitness-app-932fb",
+    "storage_bucket": "fitness-app-932fb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:458869922508:android:655a8476fab13069b50069",
+        "android_client_info": {
+          "package_name": "com.example.fitness_flutter_pn"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD5myRJEf_plZUQXd_twWMlrGDDxwLhAts"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

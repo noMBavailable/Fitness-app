@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart'; // 1. Import Firebase Core
+import 'package:firebase_auth/firebase_auth.dart'; // 2. Import Firebase Auth
+import 'firebase_options.dart';
 
 // Managers
 import 'managers/nav_manager.dart';
@@ -16,9 +19,17 @@ import 'screens/weight_graph_screen.dart';
 import 'widgets/weight_modal.dart';
 import 'widgets/exercise_modal.dart';
 import 'screens/notes_screen.dart';
-import 'screens/workout_selection_screen.dart'; // Import the new selection screen
+import 'screens/workout_selection_screen.dart';
+import 'screens/auth_screen.dart'; // 3. Import your new AuthScreen
 
-void main() => runApp(const FitnessApp());
+void main() async {
+  // 4. Initialize Firebase before running the app
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(const FitnessApp());
+}
 
 class FitnessApp extends StatelessWidget {
   const FitnessApp({super.key});
@@ -28,7 +39,21 @@ class FitnessApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(useMaterial3: true, primarySwatch: Colors.blue),
-      home: const FitnessHomeScreen(),
+      // 5. Use StreamBuilder to switch between Auth and Home automatically
+      home: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          }
+          // If a user exists in the stream, they are logged in
+          if (snapshot.hasData) {
+            return const FitnessHomeScreen();
+          }
+          // Otherwise, show the Login/Signup screen
+          return const AuthScreen();
+        },
+      ),
     );
   }
 }
@@ -41,7 +66,6 @@ class FitnessHomeScreen extends StatefulWidget {
 }
 
 class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
-  // 1. OBJECT INSTANCES
   final NavManager _navManager = NavManager();
   final WeightManager _weightManager = WeightManager();
   final ExerciseManager _exerciseManager = ExerciseManager();
@@ -49,7 +73,6 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
   final AgendaManager _agendaManager = AgendaManager();
   final NotesManager _notesManager = NotesManager();
 
-  // 2. STATE VARIABLES
   bool _showWeightModal = false;
   bool _showExerciseModal = false;
   int _actualCurrentPage = 0;
@@ -59,6 +82,7 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
     super.initState();
 
     _navManager.addListener(() {
+      if (!mounted) return;
       setState(() {
         int newIndex = _navManager.currentIndex;
 
@@ -73,12 +97,10 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
           _showExerciseModal = true;
           _showWeightModal = false;
         } else if (newIndex == 4) {
-          // Workout Selection Tab
           _showWeightModal = false;
           _showExerciseModal = false;
           _actualCurrentPage = 3;
         } else if (newIndex == 5) {
-          // Notes Tab
           _showWeightModal = false;
           _showExerciseModal = false;
           _actualCurrentPage = 4;
@@ -93,7 +115,6 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Dynamic page list ensures selection screen always has the latest manager data
     final List<Widget> dynamicPages = [
       const HomeScreen(),
       AgendaScreen(
@@ -102,7 +123,6 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
         navManager: _navManager,
       ),
       WeightGraphScreen(manager: _weightManager, navManager: _navManager),
-      // REPLACED: ActiveWorkoutScreen is now WorkoutSelectionScreen
       WorkoutSelectionScreen(
         agendaManager: _agendaManager,
         workoutManager: _workoutManager,
@@ -126,16 +146,11 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
             },
             child: dynamicPages[_actualCurrentPage],
           ),
-
           if (_showWeightModal)
             Align(
               alignment: const Alignment(0, 0.65),
-              child: WeightModal(
-                manager: _weightManager,
-                navManager: _navManager,
-              ),
+              child: WeightModal(manager: _weightManager, navManager: _navManager),
             ),
-
           if (_showExerciseModal)
             Align(
               alignment: const Alignment(0, 0.68),
@@ -145,7 +160,6 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
                 navManager: _navManager,
               ),
             ),
-
           Align(
             alignment: const Alignment(0, 0.92),
             child: SwipeNavDock(manager: _navManager),

@@ -36,6 +36,13 @@ dependencies:
   cupertino_icons: ^1.0.8
   fl_chart: ^1.2.0
   table_calendar: ^3.1.2
+  intl: ^0.19.0 # Good for formatting dates in notes/weight
+
+
+  #firebase
+  firebase_core: ^3.1.1
+  firebase_auth: ^5.1.1
+  cloud_firestore: ^5.0.2
 
 dev_dependencies:
   flutter_test:
