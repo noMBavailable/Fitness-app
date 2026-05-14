@@ -105,13 +105,13 @@ class _NotesScreenState extends State<NotesScreen> {
           builder: (ctx) => AlertDialog(
             title: const Text("Remove note?"),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Nee")),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("No")),
               TextButton(
                 onPressed: () {
                   widget.notesManager.deleteNote(note.id);
                   Navigator.pop(ctx);
                 },
-                child: const Text("Ja", style: TextStyle(color: Colors.red)),
+                child: const Text("Yes", style: TextStyle(color: Colors.red)),
               ),
             ],
           ),
