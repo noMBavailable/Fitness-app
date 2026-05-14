@@ -24,4 +24,6 @@ class WorkoutManager extends ChangeNotifier {
   void notifyUI() {
     notifyListeners();
   }
+
+ 
 }

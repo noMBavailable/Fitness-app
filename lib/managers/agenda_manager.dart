@@ -12,11 +12,7 @@ class AgendaManager extends ChangeNotifier {
     // Normalize date (set time to 00:00:00) so different times don't break the map
     final day = DateTime(date.year, date.month, date.day);
     
-    if (_scheduledWorkouts[day] == null) {
-      _scheduledWorkouts[day] = [workout];
-    } else {
-      _scheduledWorkouts[day]!.add(workout);
-    }
+    _scheduledWorkouts[day] = [workout];
     notifyListeners();
   }
 
@@ -25,4 +21,20 @@ class AgendaManager extends ChangeNotifier {
     final day = DateTime(date.year, date.month, date.day);
     return _scheduledWorkouts[day] ?? [];
   }
+
+   void removeWorkoutFromDay(DateTime date, dynamic workout) {
+  // Normalize the date so it matches your map keys
+  DateTime normalizedDate = DateTime(date.year, date.month, date.day);
+  
+  if (_scheduledWorkouts.containsKey(normalizedDate)) {
+    _scheduledWorkouts[normalizedDate]!.remove(workout);
+    
+    // Clean up empty lists
+    if (_scheduledWorkouts[normalizedDate]!.isEmpty) {
+      _scheduledWorkouts.remove(normalizedDate);
+    }
+    
+    notifyListeners();
+  }
+}
 }
