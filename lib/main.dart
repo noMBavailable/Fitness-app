@@ -65,13 +65,16 @@ class FitnessHomeScreen extends StatefulWidget {
   State<FitnessHomeScreen> createState() => _FitnessHomeScreenState();
 }
 
+// ... (imports remain the same)
+
 class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
-  final NavManager _navManager = NavManager();
-  final WeightManager _weightManager = WeightManager();
-  final ExerciseManager _exerciseManager = ExerciseManager();
-  final WorkoutManager _workoutManager = WorkoutManager();
-  final AgendaManager _agendaManager = AgendaManager();
-  final NotesManager _notesManager = NotesManager();
+  // Use 'late' to ensure they are ready for the dynamicPages list
+  late final NavManager _navManager;
+  late final WeightManager _weightManager;
+  late final ExerciseManager _exerciseManager;
+  late final WorkoutManager _workoutManager;
+  late final AgendaManager _agendaManager;
+  late final NotesManager _notesManager;
 
   bool _showWeightModal = false;
   bool _showExerciseModal = false;
@@ -80,6 +83,13 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
   @override
   void initState() {
     super.initState();
+    // Initialize Managers
+    _navManager = NavManager();
+    _weightManager = WeightManager();
+    _exerciseManager = ExerciseManager();
+    _workoutManager = WorkoutManager();
+    _agendaManager = AgendaManager();
+    _notesManager = NotesManager();
 
     _navManager.addListener(() {
       if (!mounted) return;
@@ -115,6 +125,7 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Re-build this list inside build to ensure Managers are initialized
     final List<Widget> dynamicPages = [
       const HomeScreen(),
       AgendaScreen(

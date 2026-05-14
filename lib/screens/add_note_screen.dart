@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../managers/notes_manager.dart';
-import '../models/note_model.dart'; // CRUCIAAL: Dit lost de 'Undefined class' error op!
+import '../models/note_model.dart';
 
 class AddNoteScreen extends StatefulWidget {
   final NotesManager notesManager;
@@ -13,14 +13,12 @@ class AddNoteScreen extends StatefulWidget {
 }
 
 class _AddNoteScreenState extends State<AddNoteScreen> {
-  // We gebruiken 'late' zodat we ze in initState kunnen vullen
   late TextEditingController _titleController;
   late TextEditingController _contentController;
 
   @override
   void initState() {
     super.initState();
-    // Vul de controllers direct met de tekst van de bestaande notitie (als die er is)
     _titleController = TextEditingController(text: widget.existingNote?.title ?? "");
     _contentController = TextEditingController(text: widget.existingNote?.content ?? "");
   }
@@ -36,21 +34,26 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
     final titleText = _titleController.text.trim();
     final contentText = _contentController.text.trim();
 
-    if (titleText.isNotEmpty || contentText.isNotEmpty) {
-      final finalTitle = titleText.isEmpty ? "Naamloze notitie" : titleText;
-
-      if (widget.existingNote != null) {
-        // BEWERKEN: Gebruik de updateNote functie van de manager
-        widget.notesManager.updateNote(
-          widget.existingNote!.id,
-          finalTitle,
-          contentText,
-        );
-      } else {
-        // NIEUW: Gebruik de addNote functie
-        widget.notesManager.addNote(finalTitle, contentText);
-      }
+    // Prevent saving completely empty notes
+    if (titleText.isEmpty && contentText.isEmpty) {
+      Navigator.pop(context);
+      return;
     }
+
+    final finalTitle = titleText.isEmpty ? "Nameless note" : titleText;
+
+    if (widget.existingNote != null) {
+      // UPDATE existing note in Firebase
+      widget.notesManager.updateNote(
+        widget.existingNote!.id,
+        finalTitle,
+        contentText,
+      );
+    } else {
+      // ADD new note to Firebase
+      widget.notesManager.addNote(finalTitle, contentText);
+    }
+    
     Navigator.pop(context);
   }
 
@@ -68,7 +71,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
         actions: [
           TextButton(
             onPressed: _saveNote,
-            child: const Text("Opslaan", 
+            child: const Text("Save", 
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blue)),
           ),
         ],
@@ -81,7 +84,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
               controller: _titleController,
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               decoration: const InputDecoration(
-                hintText: "Titel",
+                hintText: "Title",
                 border: InputBorder.none,
               ),
             ),
@@ -89,7 +92,6 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
             Expanded(
               child: Stack(
                 children: [
-                  // De blauwe lijntjes op de achtergrond
                   Positioned.fill(
                     child: CustomPaint(
                       painter: LinedPaperPainter(),
@@ -100,10 +102,10 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                     maxLines: null,
                     style: const TextStyle(
                       fontSize: 18, 
-                      height: 1.66, // Matcht de hoogte van de lijntjes
+                      height: 1.66, 
                     ),
                     decoration: const InputDecoration(
-                      hintText: "Begin met typen...",
+                      hintText: "Start writing...",
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.only(top: 2),
                     ),
@@ -118,12 +120,11 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
   }
 }
 
-// Vergeet de Painter niet onderaan het bestand te zetten!
 class LinedPaperPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.blue.withOpacity(0.15)
+      ..color = Colors.blue.withValues(alpha: 0.15)
       ..strokeWidth = 1.0;
 
     const double step = 30.0; 
