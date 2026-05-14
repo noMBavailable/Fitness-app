@@ -65,8 +65,6 @@ class FitnessHomeScreen extends StatefulWidget {
   State<FitnessHomeScreen> createState() => _FitnessHomeScreenState();
 }
 
-// ... (imports remain the same)
-
 class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
   // Use 'late' to ensure they are ready for the dynamicPages list
   late final NavManager _navManager;
