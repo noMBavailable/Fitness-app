@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart'; // 1. Import Firebase Core
-import 'package:firebase_auth/firebase_auth.dart'; // 2. Import Firebase Auth
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 
 // Managers
@@ -20,10 +20,9 @@ import 'widgets/weight_modal.dart';
 import 'widgets/exercise_modal.dart';
 import 'screens/notes_screen.dart';
 import 'screens/workout_selection_screen.dart';
-import 'screens/auth_screen.dart'; // 3. Import your new AuthScreen
+import 'screens/auth_screen.dart';
 
 void main() async {
-  // 4. Initialize Firebase before running the app
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -31,26 +30,55 @@ void main() async {
   runApp(const FitnessApp());
 }
 
-class FitnessApp extends StatelessWidget {
+class FitnessApp extends StatefulWidget {
   const FitnessApp({super.key});
+
+  @override
+  State<FitnessApp> createState() => _FitnessAppState();
+}
+
+class _FitnessAppState extends State<FitnessApp> {
+  // Persistence Layer: Managers created here survive Auth refreshes
+  late final NavManager _navManager;
+  late final WeightManager _weightManager;
+  late final ExerciseManager _exerciseManager;
+  late final WorkoutManager _workoutManager;
+  late final AgendaManager _agendaManager;
+  late final NotesManager _notesManager;
+
+  @override
+  void initState() {
+    super.initState();
+    _navManager = NavManager();
+    _weightManager = WeightManager();
+    _exerciseManager = ExerciseManager();
+    _workoutManager = WorkoutManager();
+    _agendaManager = AgendaManager();
+    _notesManager = NotesManager();
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(useMaterial3: true, primarySwatch: Colors.blue),
-      // 5. Use StreamBuilder to switch between Auth and Home automatically
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(body: Center(child: CircularProgressIndicator()));
           }
-          // If a user exists in the stream, they are logged in
+          
           if (snapshot.hasData) {
-            return const FitnessHomeScreen();
+            return FitnessHomeScreen(
+              navManager: _navManager,
+              weightManager: _weightManager,
+              exerciseManager: _exerciseManager,
+              workoutManager: _workoutManager,
+              agendaManager: _agendaManager,
+              notesManager: _notesManager,
+            );
           }
-          // Otherwise, show the Login/Signup screen
           return const AuthScreen();
         },
       ),
@@ -59,85 +87,99 @@ class FitnessApp extends StatelessWidget {
 }
 
 class FitnessHomeScreen extends StatefulWidget {
-  const FitnessHomeScreen({super.key});
+  final NavManager navManager;
+  final WeightManager weightManager;
+  final ExerciseManager exerciseManager;
+  final WorkoutManager workoutManager;
+  final AgendaManager agendaManager;
+  final NotesManager notesManager;
+
+  const FitnessHomeScreen({
+    super.key,
+    required this.navManager,
+    required this.weightManager,
+    required this.exerciseManager,
+    required this.workoutManager,
+    required this.agendaManager,
+    required this.notesManager,
+  });
 
   @override
   State<FitnessHomeScreen> createState() => _FitnessHomeScreenState();
 }
 
 class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
-  // Use 'late' to ensure they are ready for the dynamicPages list
-  late final NavManager _navManager;
-  late final WeightManager _weightManager;
-  late final ExerciseManager _exerciseManager;
-  late final WorkoutManager _workoutManager;
-  late final AgendaManager _agendaManager;
-  late final NotesManager _notesManager;
-
   bool _showWeightModal = false;
   bool _showExerciseModal = false;
-  int _actualCurrentPage = 0;
+  late int _actualCurrentPage;
 
   @override
   void initState() {
     super.initState();
-    // Initialize Managers
-    _navManager = NavManager();
-    _weightManager = WeightManager();
-    _exerciseManager = ExerciseManager();
-    _workoutManager = WorkoutManager();
-    _agendaManager = AgendaManager();
-    _notesManager = NotesManager();
+    
+    // SAFE INITIALIZATION: Maps 0-5 NavManager indices to 0-4 Page indices
+    _translateIndex(widget.navManager.currentIndex);
 
-    _navManager.addListener(() {
-      if (!mounted) return;
-      setState(() {
-        int newIndex = _navManager.currentIndex;
+    widget.navManager.addListener(_handleNavChange);
+  }
 
-        if (Navigator.canPop(context)) {
-          Navigator.pop(context);
-        }
+  // Internal helper to ensure we never hit a RangeError
+  void _translateIndex(int index) {
+    if (index == 2) {
+      _showWeightModal = true;
+      _showExerciseModal = false;
+      // Background stays on current or defaults to 0
+      _actualCurrentPage = _actualCurrentPage; 
+    } else if (index == 3) {
+      _showExerciseModal = true;
+      _showWeightModal = false;
+      _actualCurrentPage = _actualCurrentPage;
+    } else {
+      _showWeightModal = false;
+      _showExerciseModal = false;
+      if (index == 4) {
+        _actualCurrentPage = 3; // Active Tab -> WorkoutSelectionScreen
+      } else if (index == 5) {
+        _actualCurrentPage = 4; // Notes Tab -> NotesScreen
+      } else {
+        _actualCurrentPage = index; // Home (0) or Agenda (1)
+      }
+    }
+  }
 
-        if (newIndex == 2) {
-          _showWeightModal = true;
-          _showExerciseModal = false;
-        } else if (newIndex == 3) {
-          _showExerciseModal = true;
-          _showWeightModal = false;
-        } else if (newIndex == 4) {
-          _showWeightModal = false;
-          _showExerciseModal = false;
-          _actualCurrentPage = 3;
-        } else if (newIndex == 5) {
-          _showWeightModal = false;
-          _showExerciseModal = false;
-          _actualCurrentPage = 4;
-        } else {
-          _showWeightModal = false;
-          _showExerciseModal = false;
-          _actualCurrentPage = newIndex;
-        }
-      });
+  void _handleNavChange() {
+    if (!mounted) return;
+    setState(() {
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      _translateIndex(widget.navManager.currentIndex);
     });
   }
 
   @override
+  void dispose() {
+    widget.navManager.removeListener(_handleNavChange);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Re-build this list inside build to ensure Managers are initialized
+    // 5 Items (Indices 0, 1, 2, 3, 4)
     final List<Widget> dynamicPages = [
       const HomeScreen(),
       AgendaScreen(
-        agendaManager: _agendaManager,
-        workoutManager: _workoutManager,
-        navManager: _navManager,
+        agendaManager: widget.agendaManager,
+        workoutManager: widget.workoutManager,
+        navManager: widget.navManager,
       ),
-      WeightGraphScreen(manager: _weightManager, navManager: _navManager),
+      WeightGraphScreen(manager: widget.weightManager, navManager: widget.navManager),
       WorkoutSelectionScreen(
-        agendaManager: _agendaManager,
-        workoutManager: _workoutManager,
-        navManager: _navManager,
+        agendaManager: widget.agendaManager,
+        workoutManager: widget.workoutManager,
+        navManager: widget.navManager,
       ),
-      NotesScreen(navManager: _navManager, notesManager: _notesManager),
+      NotesScreen(navManager: widget.navManager, notesManager: widget.notesManager),
     ];
 
     return Scaffold(
@@ -153,25 +195,26 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
                 });
               }
             },
+            // Guaranteed to be between 0 and 4
             child: dynamicPages[_actualCurrentPage],
           ),
           if (_showWeightModal)
             Align(
               alignment: const Alignment(0, 0.65),
-              child: WeightModal(manager: _weightManager, navManager: _navManager),
+              child: WeightModal(manager: widget.weightManager, navManager: widget.navManager),
             ),
           if (_showExerciseModal)
             Align(
               alignment: const Alignment(0, 0.68),
               child: ExerciseModal(
-                manager: _exerciseManager,
-                manager2: _workoutManager,
-                navManager: _navManager,
+                manager: widget.exerciseManager,
+                manager2: widget.workoutManager,
+                navManager: widget.navManager,
               ),
             ),
           Align(
             alignment: const Alignment(0, 0.92),
-            child: SwipeNavDock(manager: _navManager),
+            child: SwipeNavDock(manager: widget.navManager),
           ),
         ],
       ),
