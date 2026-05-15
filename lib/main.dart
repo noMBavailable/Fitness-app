@@ -60,6 +60,7 @@ class _FitnessAppState extends State<FitnessApp> {
     _weightManager.loadWeightHistory();
     _exerciseManager.loadExercises();
     _workoutManager.loadWorkouts();
+    _agendaManager.loadScheduledWorkouts();
   }
 
   @override

@@ -56,7 +56,6 @@ class _AgendaScreenState extends State<AgendaScreen> with SingleTickerProviderSt
     super.dispose();
   }
 
-  // Common UI for the Picker/Editor Modal
   void _showWorkoutPicker({Workout? workoutToReplace}) {
     showModalBottomSheet(
       context: context,
@@ -88,53 +87,49 @@ class _AgendaScreenState extends State<AgendaScreen> with SingleTickerProviderSt
             ),
             const Divider(height: 25),
             Expanded(
-              child: widget.workoutManager.workouts.isEmpty
-                  ? const Center(child: Text("No workouts available."))
-                  : ListView.builder(
-                      itemCount: widget.workoutManager.workouts.length,
-                      itemBuilder: (context, index) {
-                        final workout = widget.workoutManager.workouts[index];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          child: ListTile(
-                            tileColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            leading: const Icon(Icons.fitness_center, color: Color(0xFF00B4DB)),
-                            title: Text(workout.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Text("${workout.selectedExercises.length} exercises"),
-                            trailing: Icon(
-                              workoutToReplace == null ? Icons.add_circle_outline : Icons.swap_horiz_rounded, 
-                              color: workoutToReplace == null ? Colors.green : Colors.orange
-                            ),
-                            onTap: () {
-                              final date = _selectedDay ?? _focusedDay;
-                              
-                              if (workoutToReplace != null) {
-                                // Swap Logic: Remove old, add new
-                                widget.agendaManager.removeWorkoutFromDay(date, workoutToReplace);
-                              }
-                              
-                              widget.agendaManager.scheduleWorkout(date, workout);
-                              Navigator.pop(context);
-                              setState(() {});
-                            },
+              child: ListenableBuilder(
+                listenable: widget.workoutManager,
+                builder: (context, _) {
+                  if (widget.workoutManager.workouts.isEmpty) {
+                    return const Center(child: Text("No workouts available."));
+                  }
+                  return ListView.builder(
+                    itemCount: widget.workoutManager.workouts.length,
+                    itemBuilder: (context, index) {
+                      final workout = widget.workoutManager.workouts[index];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        child: ListTile(
+                          tileColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          leading: const Icon(Icons.fitness_center, color: Color(0xFF00B4DB)),
+                          title: Text(workout.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text("${workout.selectedExercises.length} exercises"),
+                          trailing: Icon(
+                            workoutToReplace == null ? Icons.add_circle_outline : Icons.swap_horiz_rounded, 
+                            color: workoutToReplace == null ? Colors.green : Colors.orange
                           ),
-                        );
-                      },
-                    ),
+                          onTap: () async {
+                            final date = _selectedDay ?? _focusedDay;
+                            
+                            if (workoutToReplace != null) {
+                              await widget.agendaManager.removeWorkoutFromDay(date, workoutToReplace);
+                            }
+                            
+                            await widget.agendaManager.scheduleWorkout(date, workout);
+                            if (mounted) Navigator.pop(context);
+                          },
+                        ),
+                      );
+                    },
+                  );
+                }
+              ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  void _showSchedulePicker() {
-    _showWorkoutPicker(); // Open fresh picker
-  }
-
-  void _showWorkoutDetails(Workout workout) {
-    _showWorkoutPicker(workoutToReplace: workout); // Open picker in "Swap" mode
   }
 
   @override
@@ -157,13 +152,13 @@ class _AgendaScreenState extends State<AgendaScreen> with SingleTickerProviderSt
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF00B4DB).withValues(alpha: 0.4),
+                      color: const Color(0xFF00B4DB).withOpacity(0.4),
                       blurRadius: 20, spreadRadius: 2, offset: const Offset(0, 8),
                     )
                   ],
                 ),
                 child: FloatingActionButton(
-                  onPressed: _showSchedulePicker,
+                  onPressed: () => _showWorkoutPicker(),
                   backgroundColor: Colors.transparent,
                   elevation: 0, highlightElevation: 0,
                   child: const Icon(Icons.calendar_today_rounded, color: Colors.white, size: 35),
@@ -176,28 +171,40 @@ class _AgendaScreenState extends State<AgendaScreen> with SingleTickerProviderSt
           Column(
             children: [
               const CustomHeader(title: "Agenda"),
-              TableCalendar(
-                firstDay: DateTime.utc(2020, 1, 1),
-                lastDay: DateTime.utc(2030, 12, 31),
-                focusedDay: _focusedDay,
-                calendarFormat: _calendarFormat,
-                headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true),
-                selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                onDaySelected: (selectedDay, focusedDay) {
-                  setState(() {
-                    _selectedDay = selectedDay;
-                    _focusedDay = focusedDay;
-                  });
-                },
-                eventLoader: (day) => widget.agendaManager.getWorkoutsForDay(day),
-                calendarStyle: const CalendarStyle(
-                  
-                  todayDecoration: BoxDecoration(color: Color(0xFF00B4DB), shape: BoxShape.circle),
-                  selectedDecoration: BoxDecoration(color: Color(0xFF1A1A1A), shape: BoxShape.circle),
-                ),
+              // 1. LISTENING CALENDAR: Forces blue dots to appear instantly
+              ListenableBuilder(
+                listenable: widget.agendaManager,
+                builder: (context, _) {
+                  return TableCalendar(
+                    firstDay: DateTime.utc(2020, 1, 1),
+                    lastDay: DateTime.utc(2030, 12, 31),
+                    focusedDay: _focusedDay,
+                    calendarFormat: _calendarFormat,
+                    headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true),
+                    selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                    onDaySelected: (selectedDay, focusedDay) {
+                      setState(() {
+                        _selectedDay = selectedDay;
+                        _focusedDay = focusedDay;
+                      });
+                    },
+                    eventLoader: (day) => widget.agendaManager.getWorkoutsForDay(day),
+                    calendarStyle: const CalendarStyle(
+                      markerDecoration: BoxDecoration(color: Color.fromARGB(255, 0, 0, 0), shape: BoxShape.circle),
+                      todayDecoration: BoxDecoration(color: Color(0xFF00B4DB), shape: BoxShape.circle),
+                      selectedDecoration: BoxDecoration(color: Color(0xFF1A1A1A), shape: BoxShape.circle),
+                    ),
+                  );
+                }
               ),
               const Divider(),
-              Expanded(child: _buildWorkoutList()),
+              // 2. LISTENING WORKOUT LIST: Updates the list below the calendar
+              Expanded(
+                child: ListenableBuilder(
+                  listenable: widget.agendaManager,
+                  builder: (context, _) => _buildWorkoutList(),
+                ),
+              ),
             ],
           ),
           Align(
@@ -234,10 +241,9 @@ class _AgendaScreenState extends State<AgendaScreen> with SingleTickerProviderSt
           ),
           onDismissed: (direction) {
             widget.agendaManager.removeWorkoutFromDay(selectedDate, workout);
-            setState(() {});
           },
           child: ListTile(
-            onTap: () => _showWorkoutDetails(workout), 
+            onTap: () => _showWorkoutPicker(workoutToReplace: workout), 
             leading: const Icon(Icons.fitness_center, color: Color(0xFF1A1A1A)),
             title: Text(workout.name, style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text("${workout.selectedExercises.length} exercises - Tap to change"),
