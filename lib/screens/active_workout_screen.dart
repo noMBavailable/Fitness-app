@@ -2,11 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/workout_model.dart';
 import '../models/exercise_model.dart';
-import '../managers/nav_manager.dart'; // Add this to handle the X button
+import '../managers/nav_manager.dart';
 
 class ActiveWorkoutScreen extends StatefulWidget {
   final Workout workout;
-  final NavManager navManager; // Added to control navigation
+  final NavManager navManager;
 
   const ActiveWorkoutScreen({
     super.key, 
@@ -27,7 +27,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   @override
   void initState() {
     super.initState();
-    _startTimer(); // Starts automatically as you requested
+    _startTimer();
   }
 
   void _startTimer() {
@@ -54,154 +54,222 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Safety check for empty workouts
     if (widget.workout.selectedExercises.isEmpty) {
-      return const Center(child: Text("No exercises in this workout"));
+      return const Scaffold(body: Center(child: Text("No exercises in this workout")));
     }
 
     final currentExercise = widget.workout.selectedExercises[_currentExerciseIndex];
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F7FA), // Soft light grey background
       appBar: AppBar(
-        backgroundColor: Colors.grey[300],
+        backgroundColor: Colors.white,
         elevation: 0,
-        leading: const Icon(Icons.settings, color: Colors.black),
-        title: Text(widget.workout.name.toUpperCase(), 
-            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        automaticallyImplyLeading: false,
+        title: Text(
+          widget.workout.name.toUpperCase(),
+          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w900, letterSpacing: 1.2, fontSize: 16),
+        ),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.close, color: Colors.black, size: 30),
+            icon: const Icon(Icons.close_rounded, color: Colors.black, size: 28),
             onPressed: () {
-              // FIX: Instead of pop, we switch the nav index back to Home
-              widget.navManager.setIndex(0); // might be Navigator.pop(context) if you want to just pop the screen
+              // FIX: This now correctly closes the screen
+              Navigator.pop(context); 
             },
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Column(
         children: [
-          const SizedBox(height: 20),
-          Text(
-            _formatTime(_secondsElapsed),
-            style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w800),
+          // Timer Section
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
+            ),
+            child: Column(
+              children: [
+                const Text("ELAPSED TIME", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 12)),
+                Text(
+                  _formatTime(_secondsElapsed),
+                  style: const TextStyle(fontSize: 54, fontWeight: FontWeight.w900, color: Color(0xFF1A1A1A)),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
+          
           Expanded(
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildSidebar(),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("${currentExercise.name}:", 
-                          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 10),
-                        Text("Set $_currentSet:", 
-                          style: const TextStyle(fontSize: 26)),
-                        Text("${currentExercise.reps} reps ${currentExercise.weight}kg", 
-                          style: const TextStyle(fontSize: 26)),
-                      ],
-                    ),
+                    child: _buildMainContent(currentExercise),
                   ),
                 ),
               ],
             ),
           ),
-          _buildArrows(),
-          const SizedBox(height: 100), // Room for the SwipeNavDock
+          
+          _buildControls(),
+          const SizedBox(height: 40),
         ],
       ),
+    );
+  }
+
+  Widget _buildMainContent(Exercise exercise) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFF00B4DB).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Text("CURRENT EXERCISE", style: TextStyle(color: Color(0xFF00B4DB), fontWeight: FontWeight.bold, fontSize: 10)),
+        ),
+        const SizedBox(height: 8),
+        Text(exercise.name, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, height: 1.1)),
+        const SizedBox(height: 25),
+        
+        // Stats Card
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5))],
+          ),
+          child: Column(
+            children: [
+              _buildStatRow("SET", "$_currentSet / 4", Icons.repeat),
+              const Divider(height: 30),
+              _buildStatRow("TARGET", "${exercise.reps} Reps", Icons.track_changes),
+              const Divider(height: 30),
+              _buildStatRow("WEIGHT", "${exercise.weight} KG", Icons.fitness_center),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatRow(String label, String value, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: Colors.grey),
+        const SizedBox(width: 12),
+        Text(label, style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 12)),
+        const Spacer(),
+        Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+      ],
     );
   }
 
   Widget _buildSidebar() {
-  return Container(
-    // Option 1: Increase this width to 120 or 130 to fit the 65px box + 40px icon
-    width: 120, 
-    padding: const EdgeInsets.only(left: 10),
-    child: SingleChildScrollView(
-      child: Column(
-        children: [
-          _sidebarBox("Start"),
-          const Icon(Icons.arrow_downward, size: 16),
-          ...List.generate(widget.workout.selectedExercises.length, (index) {
-            bool isActive = _currentExerciseIndex == index;
-            return Column(
-              children: [
-                // Use a Stack or wrap in a Row with no constraints to prevent overflow
-                Row(
-                  mainAxisSize: MainAxisSize.min, // Keep the row as small as possible
-                  children: [
-                    _sidebarBox(
-                      widget.workout.selectedExercises[index].name,
-                      isActive: isActive,
-                    ),
-                    // Use a smaller icon or a sized box to prevent the 10px overflow
-                    if (isActive) 
-                      const Icon(Icons.arrow_left, size: 30), // Reduced from 40 to 30
-                  ],
-                ),
-                const Icon(Icons.arrow_downward, size: 16),
-              ],
-            );
-          }),
-          _sidebarBox("Finish", color: Colors.greenAccent),
-        ],
-      ),
-    ),
-  );
-}
-
-  Widget _sidebarBox(String label, {bool isActive = false, Color? color}) {
     return Container(
-      width: 65, height: 65,
-      decoration: BoxDecoration(
-        color: color ?? (isActive ? Colors.white : Colors.grey[300]),
-        border: Border.all(color: Colors.black, width: 2),
+      width: 90,
+      color: Colors.transparent,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        itemCount: widget.workout.selectedExercises.length,
+        itemBuilder: (context, index) {
+          bool isActive = _currentExerciseIndex == index;
+          bool isCompleted = _currentExerciseIndex > index;
+          
+          return Column(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                width: 55, height: 55,
+                decoration: BoxDecoration(
+                  color: isActive ? const Color(0xFF1A1A1A) : (isCompleted ? Colors.green : Colors.white),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: isActive ? Colors.transparent : Colors.grey.withOpacity(0.3), width: 2),
+                  boxShadow: isActive ? [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))] : [],
+                ),
+                child: Center(
+                  child: isCompleted 
+                    ? const Icon(Icons.check, color: Colors.white)
+                    : Text("${index + 1}", style: TextStyle(color: isActive ? Colors.white : Colors.grey, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              if (index != widget.workout.selectedExercises.length - 1)
+                Container(width: 2, height: 30, color: Colors.grey.withOpacity(0.2)),
+            ],
+          );
+        },
       ),
-      alignment: Alignment.center,
-      child: Text(label, textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
     );
   }
 
-  Widget _buildArrows() {
+  Widget _buildControls() {
     return Padding(
-      padding: const EdgeInsets.only(right: 30),
+      padding: const EdgeInsets.symmetric(horizontal: 30),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_circle_left, size: 70, color: Colors.blueAccent),
-            onPressed: () {
-              setState(() {
-                if (_currentSet > 1) { _currentSet--; }
-                else if (_currentExerciseIndex > 0) {
-                  _currentExerciseIndex--;
-                  _currentSet = 4;
-                }
-              });
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.arrow_circle_right, size: 70, color: Colors.blueAccent),
-            onPressed: () {
+          _controlButton(Icons.arrow_back_ios_new_rounded, () {
+            setState(() {
+              if (_currentSet > 1) { _currentSet--; }
+              else if (_currentExerciseIndex > 0) {
+                _currentExerciseIndex--;
+                _currentSet = 4;
+              }
+            });
+          }),
+          
+          // Complete Set / Next Button
+          GestureDetector(
+            onTap: () {
               setState(() {
                 if (_currentSet < 4) { _currentSet++; }
                 else if (_currentExerciseIndex < widget.workout.selectedExercises.length - 1) {
                   _currentExerciseIndex++;
                   _currentSet = 1;
+                } else {
+                  // Finish Workout
+                  Navigator.pop(context);
                 }
               });
             },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [Color(0xFF00B4DB), Color(0xFF0083B0)]),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [BoxShadow(color: const Color(0xFF00B4DB).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))],
+              ),
+              child: const Text("NEXT SET", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
           ),
+
+          _controlButton(Icons.arrow_forward_ios_rounded, () {
+            setState(() {
+              if (_currentSet < 4) { _currentSet++; }
+              else if (_currentExerciseIndex < widget.workout.selectedExercises.length - 1) {
+                _currentExerciseIndex++;
+                _currentSet = 1;
+              }
+            });
+          }),
         ],
       ),
+    );
+  }
+
+  Widget _controlButton(IconData icon, VoidCallback onTap) {
+    return IconButton(
+      icon: Icon(icon, size: 28, color: Colors.black54),
+      onPressed: onTap,
     );
   }
 }

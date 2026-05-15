@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Required for HapticFeedback
 import '../managers/agenda_manager.dart';
 import '../managers/workout_manager.dart';
 import '../managers/nav_manager.dart';
@@ -28,26 +29,45 @@ class WorkoutSelectionScreen extends StatelessWidget {
         const CustomHeader(title: "Start Workout"),
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 120), // Bottom padding for dock
             children: [
               // SECTION 1: TODAY'S AGENDA
-              const Text("Planned for Today", 
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 10),
+              const Row(
+                children: [
+                  Icon(Icons.calendar_today_outlined, size: 18, color: Colors.blue),
+                  SizedBox(width: 8),
+                  Text("Planned for Today", 
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              const SizedBox(height: 12),
               if (todayWorkouts.isEmpty)
-                const Card(child: ListTile(title: Text("Nothing planned for today.")))
+                Card(
+                  elevation: 0,
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Colors.grey[300]!)),
+                  child: const ListTile(
+                    title: Text("Nothing planned for today.", style: TextStyle(color: Colors.grey)),
+                  ),
+                )
               else
                 ...todayWorkouts.map((workout) => _buildWorkoutTile(context, workout, isPlanned: true)),
 
               const Padding(
-                padding: EdgeInsets.symmetric(vertical: 20),
-                child: Divider(thickness: 2),
+                padding: EdgeInsets.symmetric(vertical: 25),
+                child: Divider(thickness: 1, height: 1),
               ),
 
               // SECTION 2: ALL WORKOUTS
-              const Text("All Workouts", 
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 10),
+              const Row(
+                children: [
+                  Icon(Icons.format_list_bulleted_rounded, size: 18, color: Colors.grey),
+                  SizedBox(width: 8),
+                  Text("All Workouts", 
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              const SizedBox(height: 12),
               if (workoutManager.workouts.isEmpty)
                 const Center(child: Text("No workouts created yet."))
               else
@@ -60,25 +80,83 @@ class WorkoutSelectionScreen extends StatelessWidget {
   }
 
   Widget _buildWorkoutTile(BuildContext context, Workout workout, {bool isPlanned = false}) {
-    return Card(
-      color: isPlanned ? Colors.blue[50] : Colors.white,
-      child: ListTile(
-        leading: Icon(Icons.fitness_center, color: isPlanned ? Colors.blue : Colors.black),
-        title: Text(workout.name),
-        subtitle: Text("${workout.selectedExercises.length} Exercises"),
-        trailing: const Icon(Icons.play_arrow),
-        onTap: () {
-          // Push the screen so the timer starts ONLY now
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ActiveWorkoutScreen(
-                workout: workout,
-                navManager: navManager,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Material(
+        color: isPlanned ? const Color(0xFFE3F2FD) : Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(15),
+          splashColor: const Color(0xFF00B4DB).withOpacity(0.2),
+          highlightColor: const Color(0xFF00B4DB).withOpacity(0.1),
+          onTap: () {
+            // FEEDBACK: Add a haptic vibration for a "premium" feel
+            HapticFeedback.mediumImpact();
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ActiveWorkoutScreen(
+                  workout: workout,
+                  navManager: navManager,
+                ),
               ),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: isPlanned ? Colors.blue : Colors.grey[100],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.fitness_center, 
+                    color: isPlanned ? Colors.white : Colors.black87
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        workout.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      Text(
+                        "${workout.selectedExercises.length} Exercises",
+                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+                // LAUNCH ICON
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.blue),
+                ),
+              ],
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
