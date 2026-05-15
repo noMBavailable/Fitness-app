@@ -58,6 +58,8 @@ class _FitnessAppState extends State<FitnessApp> {
 
     // NEW: Fetch existing weight data from Firebase on startup
     _weightManager.loadWeightHistory();
+    _exerciseManager.loadExercises();
+    _workoutManager.loadWorkouts();
   }
 
   @override
