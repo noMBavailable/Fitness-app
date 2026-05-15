@@ -38,7 +38,7 @@ class FitnessApp extends StatefulWidget {
 }
 
 class _FitnessAppState extends State<FitnessApp> {
-  // Persistence Layer: Managers created here survive Auth refreshes
+  // Persistence Layer: Using late final is fine here as they are initialized in initState
   late final NavManager _navManager;
   late final WeightManager _weightManager;
   late final ExerciseManager _exerciseManager;
@@ -55,6 +55,9 @@ class _FitnessAppState extends State<FitnessApp> {
     _workoutManager = WorkoutManager();
     _agendaManager = AgendaManager();
     _notesManager = NotesManager();
+
+    // NEW: Fetch existing weight data from Firebase on startup
+    _weightManager.loadWeightHistory();
   }
 
   @override
@@ -111,50 +114,48 @@ class FitnessHomeScreen extends StatefulWidget {
 class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
   bool _showWeightModal = false;
   bool _showExerciseModal = false;
-  late int _actualCurrentPage;
+  
+  // FIX: Removed 'late' and initialized with 0 to prevent Hot Reload crashes
+  int _actualCurrentPage = 0;
 
   @override
   void initState() {
     super.initState();
     
-    // SAFE INITIALIZATION: Maps 0-5 NavManager indices to 0-4 Page indices
+    // Initial mapping of indices
     _translateIndex(widget.navManager.currentIndex);
 
     widget.navManager.addListener(_handleNavChange);
   }
 
-  // Internal helper to ensure we never hit a RangeError
+  // Internal helper to ensure we never hit a RangeError or LateInitializationError
   void _translateIndex(int index) {
-    if (index == 2) {
-      _showWeightModal = true;
-      _showExerciseModal = false;
-      // Background stays on current or defaults to 0
-      _actualCurrentPage = _actualCurrentPage; 
-    } else if (index == 3) {
-      _showExerciseModal = true;
-      _showWeightModal = false;
-      _actualCurrentPage = _actualCurrentPage;
-    } else {
-      _showWeightModal = false;
-      _showExerciseModal = false;
-      if (index == 4) {
-        _actualCurrentPage = 3; // Active Tab -> WorkoutSelectionScreen
-      } else if (index == 5) {
-        _actualCurrentPage = 4; // Notes Tab -> NotesScreen
+    setState(() {
+      if (index == 2) {
+        _showWeightModal = true;
+        _showExerciseModal = false;
+      } else if (index == 3) {
+        _showExerciseModal = true;
+        _showWeightModal = false;
       } else {
-        _actualCurrentPage = index; // Home (0) or Agenda (1)
+        _showWeightModal = false;
+        _showExerciseModal = false;
+        
+        // Update the background page only when not in a modal state
+        if (index == 4) {
+          _actualCurrentPage = 3; // WorkoutSelectionScreen
+        } else if (index == 5) {
+          _actualCurrentPage = 4; // NotesScreen
+        } else {
+          _actualCurrentPage = index; // Home (0) or Agenda (1)
+        }
       }
-    }
+    });
   }
 
   void _handleNavChange() {
     if (!mounted) return;
-    setState(() {
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
-      _translateIndex(widget.navManager.currentIndex);
-    });
+    _translateIndex(widget.navManager.currentIndex);
   }
 
   @override
@@ -165,7 +166,7 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 5 Items (Indices 0, 1, 2, 3, 4)
+    // dynamicPages (Indices 0, 1, 2, 3, 4)
     final List<Widget> dynamicPages = [
       const HomeScreen(),
       AgendaScreen(
@@ -195,7 +196,6 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
                 });
               }
             },
-            // Guaranteed to be between 0 and 4
             child: dynamicPages[_actualCurrentPage],
           ),
           if (_showWeightModal)
