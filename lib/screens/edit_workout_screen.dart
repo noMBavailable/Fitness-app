@@ -23,9 +23,38 @@ class EditWorkoutScreen extends StatefulWidget {
   State<EditWorkoutScreen> createState() => _EditWorkoutScreenState();
 }
 
-class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
+class _EditWorkoutScreenState extends State<EditWorkoutScreen> with SingleTickerProviderStateMixin {
   final _nameController = TextEditingController();
   List<Exercise> _tempSelected = [];
+
+  // Animation setup
+  AnimationController? _controller;
+  late Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Initialize pulsing animation to match Agenda & Exercise screens
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+
+    _pulseAnimation = TweenSequence([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.15), weight: 50),
+      TweenSequenceItem(tween: Tween(begin: 1.15, end: 1.0), weight: 50),
+    ]).animate(CurvedAnimation(parent: _controller!, curve: Curves.easeInOut));
+
+    _controller!.repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    _nameController.dispose();
+    super.dispose();
+  }
 
   void _showWorkoutForm({Workout? workout}) {
     if (workout != null) {
@@ -39,6 +68,9 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) => Padding(
           padding: EdgeInsets.only(
@@ -62,7 +94,6 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                   itemCount: widget.exerciseManager.exercises.length,
                   itemBuilder: (context, index) {
                     final ex = widget.exerciseManager.exercises[index];
-                    // Logic to check if exercise is selected by comparing IDs
                     final isSelected = _tempSelected.any((e) => e.id == ex.id);
                     
                     return CheckboxListTile(
@@ -85,10 +116,8 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                 onPressed: () async {
                   if (_nameController.text.isNotEmpty) {
                     if (workout == null) {
-                      // Call the async add method
                       await widget.workoutManager.addWorkout(_nameController.text, _tempSelected);
                     } else {
-                      // If you implement a Firebase updateWorkout method, call it here
                       workout.name = _nameController.text;
                       workout.selectedExercises = List.from(_tempSelected);
                       widget.workoutManager.notifyUI();
@@ -109,12 +138,36 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[200],
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 90),
-        child: FloatingActionButton(
-          onPressed: () => _showWorkoutForm(),
-          child: const Icon(Icons.add),
-        ),
+        padding: const EdgeInsets.only(bottom: 100),
+        child: _controller == null 
+          ? const SizedBox.shrink() 
+          : ScaleTransition(
+              scale: _pulseAnimation,
+              child: Container(
+                height: 75, width: 75,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF00B4DB), Color(0xFF0083B0)],
+                    begin: Alignment.topLeft, end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF00B4DB).withOpacity(0.4),
+                      blurRadius: 20, spreadRadius: 2, offset: const Offset(0, 8),
+                    )
+                  ],
+                ),
+                child: FloatingActionButton(
+                  onPressed: () => _showWorkoutForm(),
+                  backgroundColor: Colors.transparent,
+                  elevation: 0, highlightElevation: 0,
+                  child: const Icon(Icons.add, color: Colors.white, size: 35),
+                ),
+              ),
+            ),
       ),
       body: Stack(
         children: [
@@ -122,7 +175,6 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
             children: [
               const CustomHeader(title: "Edit Workouts", showBackButton: true),
               Expanded(
-                // FIXED: Use ListenableBuilder to watch for changes in WorkoutManager
                 child: ListenableBuilder(
                   listenable: widget.workoutManager,
                   builder: (context, _) {
@@ -133,7 +185,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                     }
 
                     return ListView.builder(
-                      padding: const EdgeInsets.only(bottom: 120),
+                      padding: const EdgeInsets.only(bottom: 160), // Space for pulse button
                       itemCount: workouts.length,
                       itemBuilder: (context, index) {
                         final workout = workouts[index];
