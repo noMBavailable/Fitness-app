@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Required for HapticFeedback
+import 'package:flutter/services.dart'; // For HapticFeedback
 import '../managers/agenda_manager.dart';
 import '../managers/workout_manager.dart';
 import '../managers/nav_manager.dart';
@@ -29,7 +29,7 @@ class WorkoutSelectionScreen extends StatelessWidget {
         const CustomHeader(title: "Start Workout"),
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 120), // Bottom padding for dock
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 120),
             children: [
               // SECTION 1: TODAY'S AGENDA
               const Row(
@@ -45,7 +45,10 @@ class WorkoutSelectionScreen extends StatelessWidget {
                 Card(
                   elevation: 0,
                   color: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Colors.grey[300]!)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15), 
+                    side: BorderSide(color: Colors.grey[300]!)
+                  ),
                   child: const ListTile(
                     title: Text("Nothing planned for today.", style: TextStyle(color: Colors.grey)),
                   ),
@@ -98,17 +101,18 @@ class WorkoutSelectionScreen extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(15),
           splashColor: const Color(0xFF00B4DB).withOpacity(0.2),
-          highlightColor: const Color(0xFF00B4DB).withOpacity(0.1),
           onTap: () {
-            // FEEDBACK: Add a haptic vibration for a "premium" feel
+            // Provide physical feedback on tap
             HapticFeedback.mediumImpact();
 
+            // Push to ActiveWorkoutScreen and pass the workoutManager
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => ActiveWorkoutScreen(
                   workout: workout,
                   navManager: navManager,
+                  workoutManager: workoutManager, // REQUIRED FIX
                 ),
               ),
             );
@@ -144,15 +148,7 @@ class WorkoutSelectionScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                // LAUNCH ICON
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.5),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.blue),
-                ),
+                const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.blue),
               ],
             ),
           ),

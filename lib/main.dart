@@ -24,9 +24,7 @@ import 'screens/auth_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const FitnessApp());
 }
 
@@ -60,7 +58,6 @@ class _FitnessAppState extends State<FitnessApp> {
     _weightManager.loadWeightHistory();
     _exerciseManager.loadExercises();
     _workoutManager.loadWorkouts();
-    _agendaManager.loadScheduledWorkouts();
   }
 
   @override
@@ -72,9 +69,11 @@ class _FitnessAppState extends State<FitnessApp> {
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(body: Center(child: CircularProgressIndicator()));
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
           }
-          
+
           if (snapshot.hasData) {
             return FitnessHomeScreen(
               navManager: _navManager,
@@ -117,14 +116,14 @@ class FitnessHomeScreen extends StatefulWidget {
 class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
   bool _showWeightModal = false;
   bool _showExerciseModal = false;
-  
+
   // FIX: Removed 'late' and initialized with 0 to prevent Hot Reload crashes
   int _actualCurrentPage = 0;
 
   @override
   void initState() {
     super.initState();
-    
+
     // Initial mapping of indices
     _translateIndex(widget.navManager.currentIndex);
 
@@ -143,7 +142,7 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
       } else {
         _showWeightModal = false;
         _showExerciseModal = false;
-        
+
         // Update the background page only when not in a modal state
         if (index == 4) {
           _actualCurrentPage = 3; // WorkoutSelectionScreen
@@ -171,19 +170,29 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
   Widget build(BuildContext context) {
     // dynamicPages (Indices 0, 1, 2, 3, 4)
     final List<Widget> dynamicPages = [
-      const HomeScreen(),
+      HomeScreen(
+        agendaManager: widget.agendaManager,
+        navManager: widget.navManager,
+        workoutManager: widget.workoutManager,
+      ),
       AgendaScreen(
         agendaManager: widget.agendaManager,
         workoutManager: widget.workoutManager,
         navManager: widget.navManager,
       ),
-      WeightGraphScreen(manager: widget.weightManager, navManager: widget.navManager),
+      WeightGraphScreen(
+        manager: widget.weightManager,
+        navManager: widget.navManager,
+      ),
       WorkoutSelectionScreen(
         agendaManager: widget.agendaManager,
         workoutManager: widget.workoutManager,
         navManager: widget.navManager,
       ),
-      NotesScreen(navManager: widget.navManager, notesManager: widget.notesManager),
+      NotesScreen(
+        navManager: widget.navManager,
+        notesManager: widget.notesManager,
+      ),
     ];
 
     return Scaffold(
@@ -204,7 +213,10 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
           if (_showWeightModal)
             Align(
               alignment: const Alignment(0, 0.65),
-              child: WeightModal(manager: widget.weightManager, navManager: widget.navManager),
+              child: WeightModal(
+                manager: widget.weightManager,
+                navManager: widget.navManager,
+              ),
             ),
           if (_showExerciseModal)
             Align(

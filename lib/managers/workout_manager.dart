@@ -8,7 +8,36 @@ class WorkoutManager extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // 1. Premade workouts (Always local)
+  // --- WORKOUT COMPLETION LOGIC ---
+  DateTime? _lastCompletedDate;
+
+  bool get isWorkoutCompletedToday {
+    if (_lastCompletedDate == null) return false;
+    final now = DateTime.now();
+    return _lastCompletedDate!.year == now.year &&
+           _lastCompletedDate!.month == now.month &&
+           _lastCompletedDate!.day == now.day;
+  }
+
+  // Save completion to Firebase so it survives a restart
+  Future<void> markWorkoutAsCompleted() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    _lastCompletedDate = DateTime.now();
+    notifyListeners();
+
+    try {
+      await _firestore.collection('users').doc(user.uid).update({
+        'lastCompletedDate': Timestamp.fromDate(_lastCompletedDate!),
+      });
+    } catch (e) {
+      debugPrint("Error saving completion status: $e");
+    }
+  }
+
+  // --- EXISTING WORKOUT LOGIC ---
+
   final List<Workout> _premadeWorkouts = [
     Workout(
       id: 'w_pre_1',
@@ -30,17 +59,23 @@ class WorkoutManager extends ChangeNotifier {
     ),
   ];
 
-  // 2. Custom Workouts (From Firebase)
   List<Workout> _customWorkouts = [];
 
   List<Workout> get workouts => [..._premadeWorkouts, ..._customWorkouts];
 
-  // LOAD WORKOUTS FROM FIREBASE
+  // UPDATED LOAD: Now also loads the lastCompletedDate
   Future<void> loadWorkouts() async {
     final user = _auth.currentUser;
     if (user == null) return;
 
     try {
+      // 1. Load User Profile for completion status
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (userDoc.exists && userDoc.data()!.containsKey('lastCompletedDate')) {
+        _lastCompletedDate = (userDoc.data()!['lastCompletedDate'] as Timestamp).toDate();
+      }
+
+      // 2. Load Workouts
       final snapshot = await _firestore
           .collection('users')
           .doc(user.uid)
@@ -51,7 +86,6 @@ class WorkoutManager extends ChangeNotifier {
         final data = doc.data();
         final List<dynamic> exData = data['exercises'] ?? [];
         
-        // Convert the list of maps back into Exercise objects
         List<Exercise> loadedExercises = exData.map((e) => Exercise(
           id: e['id'] ?? '',
           name: e['name'] ?? '',
@@ -72,14 +106,12 @@ class WorkoutManager extends ChangeNotifier {
     }
   }
 
-  // ADD WORKOUT TO FIREBASE
   Future<void> addWorkout(String name, List<Exercise> exercises) async {
     final user = _auth.currentUser;
     if (user == null) return;
 
     final String workoutId = DateTime.now().millisecondsSinceEpoch.toString();
 
-    // Convert Exercise objects to Maps for Firestore
     final List<Map<String, dynamic>> exerciseMaps = exercises.map((e) => {
       'id': e.id,
       'name': e.name,
@@ -111,7 +143,6 @@ class WorkoutManager extends ChangeNotifier {
     }
   }
 
-  // DELETE WORKOUT FROM FIREBASE
   Future<void> deleteWorkout(String id) async {
     if (id.startsWith('w_pre_')) return;
 

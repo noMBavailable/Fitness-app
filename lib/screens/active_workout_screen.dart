@@ -3,15 +3,18 @@ import 'package:flutter/material.dart';
 import '../models/workout_model.dart';
 import '../models/exercise_model.dart';
 import '../managers/nav_manager.dart';
+import '../managers/workout_manager.dart';
 
 class ActiveWorkoutScreen extends StatefulWidget {
   final Workout workout;
   final NavManager navManager;
+  final WorkoutManager workoutManager;
 
   const ActiveWorkoutScreen({
     super.key, 
     required this.workout, 
-    required this.navManager
+    required this.navManager,
+    required this.workoutManager,
   });
 
   @override
