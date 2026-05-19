@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb; // Added for web environment checking
 import '../managers/nav_manager.dart';
 
 class SwipeNavDock extends StatelessWidget {
@@ -44,36 +45,51 @@ class SwipeNavDock extends StatelessWidget {
             child: ListenableBuilder(
               listenable: manager,
               builder: (context, _) {
-                return ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: manager.items.length,
-                  itemBuilder: (context, index) {
-                    final item = manager.items[index];
-                    // PASSED context to the item builder below
-                    return _buildNavItem(context, index, item.icon, item.title);
-                  },
+                // Centering the list items on desktop screens so they don't look awkwardly left-aligned
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        // Dynamically scales the padding so the buttons sit beautifully centered on wide displays
+                        padding: EdgeInsets.symmetric(
+                          horizontal: kIsWeb 
+                              ? (MediaQuery.of(context).size.width > 600 
+                                  ? (MediaQuery.of(context).size.width - 450) / 2 
+                                  : 20)
+                              : 20,
+                        ),
+                        itemCount: manager.items.length,
+                        itemBuilder: (context, index) {
+                          final item = manager.items[index];
+                          return _buildNavItem(context, index, item.icon, item.title);
+                        },
+                      ),
+                    ),
+                  ],
                 );
               },
             ),
           ),
 
-          // 2. Pure Icons (Left and Right Navigation Indicators)
-          const Align(
-            alignment: Alignment.centerLeft,
-            child: Padding(
-              padding: EdgeInsets.only(left: 8),
-              child: Icon(Icons.arrow_back_ios_rounded, color: Colors.white54, size: 14),
+          // 2. Pure Icons (Left and Right Navigation Indicators) - Only shown on Mobile
+          if (!kIsWeb) ...[
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: EdgeInsets.only(left: 8),
+                child: Icon(Icons.arrow_back_ios_rounded, color: Colors.white54, size: 14),
+              ),
             ),
-          ),
-
-          const Align(
-            alignment: Alignment.centerRight,
-            child: Padding(
-              padding: EdgeInsets.only(right: 8),
-              child: Icon(Icons.arrow_forward_ios_rounded, color: Colors.white54, size: 14),
+            const Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: EdgeInsets.only(right: 8),
+                child: Icon(Icons.arrow_forward_ios_rounded, color: Colors.white54, size: 14),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );

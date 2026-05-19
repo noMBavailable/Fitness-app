@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb; // Imports web detection flag
 import 'package:firebase_auth/firebase_auth.dart';
 
 class CustomHeader extends StatelessWidget {
@@ -14,9 +15,9 @@ class CustomHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(top: 23),
+      margin: EdgeInsets.only(top: kIsWeb ? 0 : 32),
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.7)),
+      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.9)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
