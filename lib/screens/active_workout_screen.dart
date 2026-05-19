@@ -240,6 +240,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                   _currentSet = 1;
                 } else {
                   // Finish Workout
+                  widget.workoutManager.markWorkoutAsCompleted();
                   Navigator.pop(context);
                 }
               });

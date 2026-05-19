@@ -120,20 +120,6 @@ class AgendaManager extends ChangeNotifier {
               .collection('scheduled_workouts')
               .doc(docId)
               .delete();
-        } else {
-          // If you ever support multiple workouts per day, update the array here
-          final remaining = _scheduledWorkouts[day]!.map((w) => {
-            'id': w.id,
-            'name': w.name,
-            'exercises': w.selectedExercises.map((e) => {/* exercises json */}).toList(),
-          }).toList();
-          
-          await _firestore
-              .collection('users')
-              .doc(user.uid)
-              .collection('scheduled_workouts')
-              .doc(docId)
-              .update({'workouts': remaining});
         }
         notifyListeners();
       }
