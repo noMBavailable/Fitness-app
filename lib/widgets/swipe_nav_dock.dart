@@ -25,7 +25,7 @@ class SwipeNavDock extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // 1. The Scrollable Icons with a ShaderMask (The "Magic" part)
+          // 1. The Scrollable Icons with a ShaderMask
           ShaderMask(
             shaderCallback: (Rect bounds) {
               return const LinearGradient(
@@ -50,14 +50,15 @@ class SwipeNavDock extends StatelessWidget {
                   itemCount: manager.items.length,
                   itemBuilder: (context, index) {
                     final item = manager.items[index];
-                    return _buildNavItem(index, item.icon, item.title);
+                    // PASSED context to the item builder below
+                    return _buildNavItem(context, index, item.icon, item.title);
                   },
                 );
               },
             ),
           ),
 
-          // 2. Pure Icons (No background boxes/gradients)
+          // 2. Pure Icons (Left and Right Navigation Indicators)
           const Align(
             alignment: Alignment.centerLeft,
             child: Padding(
@@ -78,10 +79,19 @@ class SwipeNavDock extends StatelessWidget {
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, String label) {
+  Widget _buildNavItem(BuildContext context, int index, IconData icon, String label) {
     bool isSelected = manager.currentIndex == index;
     return GestureDetector(
-      onTap: () => manager.setIndex(index),
+      onTap: () {
+        // 1. Change the tab index like normal
+        manager.setIndex(index);
+        
+        // 2. FIX: If this navbar button is pressed inside a pushed full-screen route 
+        // (like the Graph screen or Edit screen), close it immediately to reveal the chosen tab!
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+      },
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
         width: 80,
