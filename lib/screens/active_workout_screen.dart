@@ -26,7 +26,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   int _secondsElapsed = 0;
   int _currentExerciseIndex = 0;
   int _currentSet = 1;
-  bool _isPaused = true; // CHANGED: Workout now starts paused!
+  bool _isPaused = true; // Workout starts paused
 
   @override
   void initState() {
@@ -54,6 +54,82 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     final mins = (seconds ~/ 60).toString().padLeft(2, '0');
     final secs = (seconds % 60).toString().padLeft(2, '0');
     return "$mins:$secs";
+  }
+
+  // --- NEW: WORKOUT COMPLETION CELEBRATION DIALOG ---
+  void _finishWorkout() {
+    // 1. Stop the running timer loop immediately
+    _timer?.cancel();
+    
+    // 2. Push the completion data to Cloud Firestore backend
+    widget.workoutManager.markWorkoutAsCompleted();
+
+    // 3. Display an awesome completion pop-up alert card
+    showDialog(
+      context: context,
+      barrierDismissible: false, // User must press the button to exit
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 10),
+            // Glowing Success Trophy/Check circle icon
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.green.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.emoji_events_rounded, color: Colors.green, size: 60),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              "Workout Complete!",
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Awesome job crushing ${widget.workout.name}!",
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.grey),
+            ),
+            const Divider(height: 30),
+            // Display total elapsed active workout time duration inside the card
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.timer_outlined, size: 18, color: Colors.grey),
+                const SizedBox(width: 6),
+                Text(
+                  "Total Time: ${_formatTime(_secondsElapsed)}",
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 25),
+            // Finish & Close Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  // Dismiss the popup alert dialog card
+                  Navigator.pop(ctx);
+                  // Pop the active workout screen to return safely back to Home base layout
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: const Text("Back to Home", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -240,7 +316,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
             });
           }),
           
-          // Play/Pause button (Will display the green PLAY button first)
+          // Play/Pause button
           GestureDetector(
             onTap: _togglePause,
             child: Container(
@@ -276,8 +352,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                 _currentExerciseIndex++;
                 _currentSet = 1;
               } else {
-                widget.workoutManager.markWorkoutAsCompleted();
-                Navigator.pop(context);
+                // MODIFIED: Instead of silently popping out, trigger the celebration flow!
+                _finishWorkout();
               }
             });
           }),

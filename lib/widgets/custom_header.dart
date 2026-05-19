@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CustomHeader extends StatelessWidget {
   final String title;
@@ -7,7 +8,7 @@ class CustomHeader extends StatelessWidget {
   const CustomHeader({
     super.key,
     required this.title,
-    this.showBackButton = false, //default is false
+    this.showBackButton = false, // default is false
   });
 
   @override
@@ -19,6 +20,7 @@ class CustomHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // Left Side: Show Back Button if enabled, otherwise show invisible balancing space
           if (showBackButton) 
             IconButton(
               icon: const Icon(
@@ -26,12 +28,14 @@ class CustomHeader extends StatelessWidget {
                 size: 30,
                 color: Colors.white,
               ),
-              onPressed: () {Navigator.of(context).pop();
+              onPressed: () {
+                Navigator.of(context).pop();
               },
             )
-            else
-              const SizedBox(width: 45), // keep title centered
+          else
+            const SizedBox(width: 48), // Explicit width matching the size of the right button to keep title centered
 
+          // Center: Main Screen Title Text
           Text(
             title,
             style: const TextStyle(
@@ -39,13 +43,21 @@ class CustomHeader extends StatelessWidget {
               fontSize: 27,
               fontWeight: FontWeight.w600,
               letterSpacing: 1.2,
-              // Note: You can add a custom font family here later
             ),
           ),
-          // IconButton(
-          //   icon: const Icon(Icons.settings, size: 30, color: Colors.white),
-          //   onPressed: () => print("Settings pressed"),
-          // ),
+
+          // Right Side: Replaced the Settings Button with a Logout Button
+          IconButton(
+            icon: const Icon(
+              Icons.logout_rounded, 
+              size: 28, 
+              color: Colors.white
+            ),
+            onPressed: () async {
+              // Gracefully sign out the user session from Firebase
+              await FirebaseAuth.instance.signOut();
+            },
+          ),
         ],
       ),
     );
