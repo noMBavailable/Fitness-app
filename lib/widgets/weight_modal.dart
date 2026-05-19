@@ -7,7 +7,11 @@ class WeightModal extends StatefulWidget {
   final WeightManager manager;
   final NavManager navManager;
 
-  const WeightModal({super.key, required this.manager, required this.navManager});
+  const WeightModal({
+    super.key,
+    required this.manager,
+    required this.navManager,
+  });
 
   @override
   State<WeightModal> createState() => _WeightModalState();
@@ -25,26 +29,29 @@ class _WeightModalState extends State<WeightModal> {
   }
 
   // Check if there is already a weight for today in the manager
+  // 1. Import collection if you want firstWhereOrNull, or just use try/catch safely:
   void _checkTodayWeight() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    // Look through history for an entry matching today
-    final existingEntry = widget.manager.history.firstWhere(
-      (entry) {
-        final entryDate = DateTime(entry.date.year, entry.date.month, entry.date.day);
-        return entryDate.isAtSameMomentAs(today);
-      },
-      orElse: () => throw "No Entry",
-    );
-
-    // If found, populate the modal state
     try {
+      // Look through history for an entry matching today
+      final existingEntry = widget.manager.history.firstWhere((entry) {
+        final entryDate = DateTime(
+          entry.date.year,
+          entry.date.month,
+          entry.date.day,
+        );
+        return entryDate.isAtSameMomentAs(today);
+      });
+
+      // If found, populate the modal state
       _controller.text = existingEntry.value.toString();
       _isConfirmed = true;
     } catch (_) {
-      // No entry found for today, stay in input mode
+      // No entry found for today, smoothly default to false without crashing the UI
       _isConfirmed = false;
+      _controller.clear();
     }
   }
 
@@ -71,10 +78,14 @@ class _WeightModalState extends State<WeightModal> {
               TextField(
                 controller: _controller,
                 enabled: !_isConfirmed,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontWeight: _isConfirmed ? FontWeight.bold : FontWeight.normal,
+                  fontWeight: _isConfirmed
+                      ? FontWeight.bold
+                      : FontWeight.normal,
                   fontSize: _isConfirmed ? 22 : 16,
                   color: _isConfirmed ? Colors.blueAccent : Colors.black,
                 ),
@@ -85,8 +96,8 @@ class _WeightModalState extends State<WeightModal> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-                  prefixIcon: _showSuccessIcon 
-                      ? const Icon(Icons.check_circle, color: Colors.green) 
+                  prefixIcon: _showSuccessIcon
+                      ? const Icon(Icons.check_circle, color: Colors.green)
                       : null,
                 ),
               ),
@@ -100,7 +111,7 @@ class _WeightModalState extends State<WeightModal> {
                       if (value != null) {
                         widget.manager.addWeight(value);
                         FocusScope.of(context).unfocus();
-                        
+
                         setState(() {
                           _showSuccessIcon = true;
                           _isConfirmed = true;
@@ -117,8 +128,12 @@ class _WeightModalState extends State<WeightModal> {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _isConfirmed ? Colors.grey[800] : Colors.black,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    backgroundColor: _isConfirmed
+                        ? Colors.grey[800]
+                        : Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                   child: Text(
                     _isConfirmed ? "Change" : "Confirm",
