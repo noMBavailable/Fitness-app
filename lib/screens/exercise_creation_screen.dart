@@ -135,7 +135,7 @@ class _ExerciseCreationScreenState extends State<ExerciseCreationScreen> with Si
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF00B4DB).withOpacity(0.4),
+                        color: const Color(0xFF00B4DB).withValues(alpha:0.4),
                         blurRadius: 20,
                         spreadRadius: 2,
                         offset: const Offset(0, 8),

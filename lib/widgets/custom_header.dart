@@ -42,10 +42,10 @@ class CustomHeader extends StatelessWidget {
               // Note: You can add a custom font family here later
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.settings, size: 30, color: Colors.white),
-            onPressed: () => print("Settings pressed"),
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.settings, size: 30, color: Colors.white),
+          //   onPressed: () => print("Settings pressed"),
+          // ),
         ],
       ),
     );

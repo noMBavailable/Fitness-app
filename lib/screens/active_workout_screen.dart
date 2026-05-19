@@ -134,7 +134,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFF00B4DB).withOpacity(0.1),
+            color: const Color(0xFF00B4DB).withValues(alpha:0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Text("CURRENT EXERCISE", style: TextStyle(color: Color(0xFF00B4DB), fontWeight: FontWeight.bold, fontSize: 10)),
@@ -149,7 +149,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5))],
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha:0.05), blurRadius: 15, offset: const Offset(0, 5))],
           ),
           child: Column(
             children: [
@@ -196,8 +196,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                 decoration: BoxDecoration(
                   color: isActive ? const Color(0xFF1A1A1A) : (isCompleted ? Colors.green : Colors.white),
                   shape: BoxShape.circle,
-                  border: Border.all(color: isActive ? Colors.transparent : Colors.grey.withOpacity(0.3), width: 2),
-                  boxShadow: isActive ? [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))] : [],
+                  border: Border.all(color: isActive ? Colors.transparent : Colors.grey.withValues(alpha:0.3), width: 2),
+                  boxShadow: isActive ? [BoxShadow(color: Colors.black.withValues(alpha:0.3), blurRadius: 8, offset: const Offset(0, 4))] : [],
                 ),
                 child: Center(
                   child: isCompleted 
@@ -206,7 +206,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                 ),
               ),
               if (index != widget.workout.selectedExercises.length - 1)
-                Container(width: 2, height: 30, color: Colors.grey.withOpacity(0.2)),
+                Container(width: 2, height: 30, color: Colors.grey.withValues(alpha:0.2)),
             ],
           );
         },
@@ -250,7 +250,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
               decoration: BoxDecoration(
                 gradient: const LinearGradient(colors: [Color(0xFF00B4DB), Color(0xFF0083B0)]),
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: const Color(0xFF00B4DB).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))],
+                boxShadow: [BoxShadow(color: const Color(0xFF00B4DB).withValues(alpha:0.3), blurRadius: 15, offset: const Offset(0, 8))],
               ),
               child: const Text("NEXT SET", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
             ),
