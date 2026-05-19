@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb; // Added for web environment checking
 import '../managers/exercise_manager.dart';
 import '../managers/workout_manager.dart';
 import '../managers/nav_manager.dart'; 
@@ -35,7 +36,6 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> with SingleTicker
   void initState() {
     super.initState();
 
-    // Initialize pulsing animation to match Agenda & Exercise screens
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
@@ -71,67 +71,70 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> with SingleTicker
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setModalState) => Padding(
+      builder: (ctx) => Center(
+        child: Container(
+          // FIX: Bounds the popup workout editor sheet inputs cleanly on web screens
+          constraints: BoxConstraints(maxWidth: kIsWeb ? 450 : double.infinity),
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(ctx).viewInsets.bottom,
             left: 20, right: 20, top: 20,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(workout == null ? "New Workout" : "Edit Workout", 
-                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              TextField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: "Workout Name"),
-              ),
-              const SizedBox(height: 10),
-              const Text("Select Exercises:"),
-              SizedBox(
-                height: 200,
-                child: ListView.builder(
-                  itemCount: widget.exerciseManager.exercises.length,
-                  itemBuilder: (context, index) {
-                    final ex = widget.exerciseManager.exercises[index];
-                    final isSelected = _tempSelected.any((e) => e.id == ex.id);
-                    
-                    return CheckboxListTile(
-                      title: Text(ex.name),
-                      value: isSelected,
-                      onChanged: (val) {
-                        setModalState(() {
-                          if (val == true) {
-                            _tempSelected.add(ex);
-                          } else {
-                            _tempSelected.removeWhere((e) => e.id == ex.id);
-                          }
-                        });
-                      },
-                    );
-                  },
+          child: StatefulBuilder(
+            builder: (context, setModalState) => Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(workout == null ? "New Workout" : "Edit Workout", 
+                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                TextField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(labelText: "Workout Name"),
                 ),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  if (_nameController.text.isNotEmpty) {
-                    if (workout == null) {
-                      await widget.workoutManager.addWorkout(_nameController.text, _tempSelected);
-                    } else {
-                      // Call the updated backend function to modify data permanently
-                      await widget.workoutManager.updateWorkout(
-                        workout.id,
-                        _nameController.text,
-                        _tempSelected,
+                const SizedBox(height: 10),
+                const Text("Select Exercises:"),
+                SizedBox(
+                  height: 200,
+                  child: ListView.builder(
+                    itemCount: widget.exerciseManager.exercises.length,
+                    itemBuilder: (context, index) {
+                      final ex = widget.exerciseManager.exercises[index];
+                      final isSelected = _tempSelected.any((e) => e.id == ex.id);
+                      
+                      return CheckboxListTile(
+                        title: Text(ex.name),
+                        value: isSelected,
+                        onChanged: (val) {
+                          setModalState(() {
+                            if (val == true) {
+                              _tempSelected.add(ex);
+                            } else {
+                              _tempSelected.removeWhere((e) => e.id == ex.id);
+                            }
+                          });
+                        },
                       );
+                    },
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (_nameController.text.isNotEmpty) {
+                      if (workout == null) {
+                        await widget.workoutManager.addWorkout(_nameController.text, _tempSelected);
+                      } else {
+                        await widget.workoutManager.updateWorkout(
+                          workout.id,
+                          _nameController.text,
+                          _tempSelected,
+                        );
+                      }
+                      if (mounted) Navigator.pop(context);
                     }
-                    if (mounted) Navigator.pop(context);
-                  }
-                },
-                child: const Text("Save Workout"),
-              ),
-              const SizedBox(height: 20),
-            ],
+                  },
+                  child: const Text("Save Workout"),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         ),
       ),
@@ -141,36 +144,41 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> with SingleTicker
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200],
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 100),
-        child: _controller == null 
-          ? const SizedBox.shrink() 
-          : ScaleTransition(
-              scale: _pulseAnimation,
-              child: Container(
-                height: 75, width: 75,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF00B4DB), Color(0xFF0083B0)],
-                    begin: Alignment.topLeft, end: Alignment.bottomRight,
+      backgroundColor: const Color(0xFFEEEEEE),
+      // FIX: Keeps the pulsed workout-addition button inside the 450px content column layout zone on desktop screens
+      floatingActionButton: Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 450),
+          alignment: Alignment.bottomRight,
+          padding: const EdgeInsets.only(bottom: 100, right: 16),
+          child: _controller == null 
+            ? const SizedBox.shrink() 
+            : ScaleTransition(
+                scale: _pulseAnimation,
+                child: Container(
+                  height: 75, width: 75,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF00B4DB), Color(0xFF0083B0)],
+                      begin: Alignment.topLeft, end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF00B4DB).withValues(alpha:0.4),
+                        blurRadius: 20, spreadRadius: 2, offset: const Offset(0, 8),
+                      )
+                    ],
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF00B4DB).withValues(alpha:0.4),
-                      blurRadius: 20, spreadRadius: 2, offset: const Offset(0, 8),
-                    )
-                  ],
-                ),
-                child: FloatingActionButton(
-                  onPressed: () => _showWorkoutForm(),
-                  backgroundColor: Colors.transparent,
-                  elevation: 0, highlightElevation: 0,
-                  child: const Icon(Icons.add, color: Colors.white, size: 35),
+                  child: FloatingActionButton(
+                    onPressed: () => _showWorkoutForm(),
+                    backgroundColor: Colors.transparent,
+                    elevation: 0, highlightElevation: 0,
+                    child: const Icon(Icons.add, color: Colors.white, size: 35),
+                  ),
                 ),
               ),
-            ),
+        ),
       ),
       body: Stack(
         children: [
@@ -178,43 +186,49 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> with SingleTicker
             children: [
               const CustomHeader(title: "Edit Workouts", showBackButton: true),
               Expanded(
-                child: ListenableBuilder(
-                  listenable: widget.workoutManager,
-                  builder: (context, _) {
-                    final workouts = widget.workoutManager.workouts;
-                    
-                    if (workouts.isEmpty) {
-                      return const Center(child: Text("No workouts created yet."));
-                    }
+                child: Center(
+                  child: Container(
+                    // FIX: Restricts the core list item configurations to 450px wide layout boundaries on web targets
+                    constraints: BoxConstraints(maxWidth: kIsWeb ? 450 : double.infinity),
+                    child: ListenableBuilder(
+                      listenable: widget.workoutManager,
+                      builder: (context, _) {
+                        final workouts = widget.workoutManager.workouts;
+                        
+                        if (workouts.isEmpty) {
+                          return const Center(child: Text("No workouts created yet."));
+                        }
 
-                    return ListView.builder(
-                      padding: const EdgeInsets.only(bottom: 160), // Space for pulse button
-                      itemCount: workouts.length,
-                      itemBuilder: (context, index) {
-                        final workout = workouts[index];
-                        return ListTile(
-                          leading: const Icon(Icons.fitness_center),
-                          title: Text(workout.name),
-                          subtitle: Text("${workout.selectedExercises.length} Exercises"),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.edit),
-                                onPressed: () => _showWorkoutForm(workout: workout),
+                        return ListView.builder(
+                          padding: const EdgeInsets.only(bottom: 160), 
+                          itemCount: workouts.length,
+                          itemBuilder: (context, index) {
+                            final workout = workouts[index];
+                            return ListTile(
+                              leading: const Icon(Icons.fitness_center),
+                              title: Text(workout.name),
+                              subtitle: Text("${workout.selectedExercises.length} Exercises"),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.edit),
+                                    onPressed: () => _showWorkoutForm(workout: workout),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () {
+                                      widget.workoutManager.deleteWorkout(workout.id);
+                                    },
+                                  ),
+                                ],
                               ),
-                              IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () {
-                                  widget.workoutManager.deleteWorkout(workout.id);
-                                },
-                              ),
-                            ],
-                          ),
+                            );
+                          },
                         );
                       },
-                    );
-                  },
+                    ),
+                  ),
                 ),
               ),
             ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb; // Added for responsive layout checks
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../managers/nav_manager.dart';
@@ -66,37 +67,41 @@ class _NotesScreenState extends State<NotesScreen> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200],
-      // OPTION 3: THE GRADIENT GLOW BUTTON
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 100),
-        child: ScaleTransition(
-          scale: _pulseAnimation,
-          child: Container(
-            height: 75,
-            width: 75,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                colors: [Color(0xFF00B4DB), Color(0xFF0083B0)], // Deep vibrant blue gradient
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+      backgroundColor: const Color(0xFFEEEEEE),
+      // FIX: Constrains the floating pulse button location to the 450px column boundary on Web
+      floatingActionButton: Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 450),
+          alignment: Alignment.bottomRight,
+          padding: const EdgeInsets.only(bottom: 100, right: 16),
+          child: ScaleTransition(
+            scale: _pulseAnimation,
+            child: Container(
+              height: 75,
+              width: 75,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF00B4DB), Color(0xFF0083B0)], 
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF00B4DB).withValues(alpha: 0.4),
+                    blurRadius: 20,
+                    spreadRadius: 2,
+                    offset: const Offset(0, 8),
+                  )
+                ],
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF00B4DB).withValues(alpha: 0.4),
-                  blurRadius: 20,
-                  spreadRadius: 2,
-                  offset: const Offset(0, 8),
-                )
-              ],
-            ),
-            child: FloatingActionButton(
-              onPressed: () => _goToNoteEditor(),
-              backgroundColor: Colors.transparent, // Transparent to show container gradient
-              elevation: 0, // Elevation is handled by Container shadow
-              highlightElevation: 0,
-              child: const Icon(Icons.add_rounded, color: Colors.white, size: 40),
+              child: FloatingActionButton(
+                onPressed: () => _goToNoteEditor(),
+                backgroundColor: Colors.transparent, 
+                elevation: 0, 
+                highlightElevation: 0,
+                child: const Icon(Icons.add_rounded, color: Colors.white, size: 40),
+              ),
             ),
           ),
         ),
@@ -105,46 +110,56 @@ class _NotesScreenState extends State<NotesScreen> with SingleTickerProviderStat
         children: [
           Column(
             children: [
+              // Top bar stretches across 100% of widescreen displays seamlessly
               const CustomHeader(title: "Notes"),
+              
               Expanded(
-                child: StreamBuilder<QuerySnapshot>(
-                  stream: _dbService.getNotesStream(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                      return const Center(
-                        child: Text("No notes yet. Tap + to get started!"),
-                      );
-                    }
+                child: Center(
+                  child: Container(
+                    // FIX: Restricts the notes grid width to a clean 450px factor on Web browsers
+                    constraints: BoxConstraints(maxWidth: kIsWeb ? 450 : double.infinity),
+                    child: StreamBuilder<QuerySnapshot>(
+                      stream: _dbService.getNotesStream(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                          return const Center(
+                            child: Text("No notes yet. Tap + to get started!"),
+                          );
+                        }
 
-                    final notes = snapshot.data!.docs.map((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
-                      return Note(
-                        id: doc.id,
-                        title: data['title'] ?? '',
-                        content: data['content'] ?? '',
-                        date: (data['date'] as Timestamp).toDate(),
-                      );
-                    }).toList();
+                        final notes = snapshot.data!.docs.map((doc) {
+                          final data = doc.data() as Map<String, dynamic>;
+                          return Note(
+                            id: doc.id,
+                            title: data['title'] ?? '',
+                            content: data['content'] ?? '',
+                            date: (data['date'] as Timestamp).toDate(),
+                          );
+                        }).toList();
 
-                    return GridView.builder(
-                      padding: const EdgeInsets.fromLTRB(15, 10, 15, 130),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        childAspectRatio: 0.8,
-                      ),
-                      itemCount: notes.length,
-                      itemBuilder: (context, index) => _buildNoteCard(notes[index]),
-                    );
-                  },
+                        return GridView.builder(
+                          padding: const EdgeInsets.fromLTRB(15, 10, 15, 130),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                            childAspectRatio: 0.8,
+                          ),
+                          itemCount: notes.length,
+                          itemBuilder: (context, index) => _buildNoteCard(notes[index]),
+                        );
+                      },
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
+          
+          // Navigation Dock continues to span full widescreen layout size smoothly
           Align(
             alignment: const Alignment(0, 0.92),
             child: SwipeNavDock(manager: widget.navManager),
@@ -171,7 +186,6 @@ class _NotesScreenState extends State<NotesScreen> with SingleTickerProviderStat
                 child: const Text("Yes", style: TextStyle(color: Colors.red)),
               ),
               TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("No")),
-              
             ],
           ),
         );
@@ -213,15 +227,15 @@ class _NotesScreenState extends State<NotesScreen> with SingleTickerProviderStat
                   style: const TextStyle(fontSize: 10, color: Colors.black87),
                   maxLines: 4,
                   overflow: TextOverflow.ellipsis,
-                )
+                ),
               )
             ),
             Padding(
               padding: const EdgeInsets.all(6), 
               child: Text(
                 DateFormat('dd/MM/yy').format(note.date), 
-                style: const TextStyle(fontSize: 8, color: Colors.grey)
-              )
+                style: const TextStyle(fontSize: 8, color: Colors.grey),
+              ),
             ),
           ],
         ),
