@@ -214,6 +214,11 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
                   _showWeightModal = false;
                   _showExerciseModal = false;
                 });
+                // Synchronize back to match the active background screen index mapping!
+                int restoredNavIndex = _actualCurrentPage;
+                if (_actualCurrentPage == 3) restoredNavIndex = 4;
+                if (_actualCurrentPage == 4) restoredNavIndex = 5;
+                widget.navManager.setIndex(restoredNavIndex);
               }
             },
             child: dynamicPages[_actualCurrentPage],
