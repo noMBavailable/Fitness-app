@@ -54,6 +54,9 @@ class _FitnessAppState extends State<FitnessApp> {
     _agendaManager = AgendaManager();
     _notesManager = NotesManager();
 
+    // Force login on startup
+    FirebaseAuth.instance.signOut();
+
     // NEW: Fetch existing weight data from Firebase on startup
     _weightManager.loadWeightHistory();
     _exerciseManager.loadExercises();
