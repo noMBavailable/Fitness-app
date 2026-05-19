@@ -143,13 +143,21 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
         _showWeightModal = false;
         _showExerciseModal = false;
 
-        // Update the background page only when not in a modal state
-        if (index == 4) {
-          _actualCurrentPage = 3; // WorkoutSelectionScreen
-        } else if (index == 5) {
-          _actualCurrentPage = 4; // NotesScreen
-        } else {
-          _actualCurrentPage = index; // Home (0) or Agenda (1)
+        switch (index) {
+          case 0:
+            _actualCurrentPage = 0; // Home
+            break;
+          case 1:
+            _actualCurrentPage = 1; // Agenda
+            break;
+          case 4:
+            _actualCurrentPage = 3; // WorkoutSelectionScreen
+            break;
+          case 5:
+            _actualCurrentPage = 4; // NotesScreen
+            break;
+          default:
+            _actualCurrentPage = 0; // Safe fallback
         }
       }
     });
