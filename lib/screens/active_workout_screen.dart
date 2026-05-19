@@ -26,6 +26,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   int _secondsElapsed = 0;
   int _currentExerciseIndex = 0;
   int _currentSet = 1;
+  bool _isPaused = true; // CHANGED: Workout now starts paused!
 
   @override
   void initState() {
@@ -35,11 +36,17 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
 
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
+      if (mounted && !_isPaused) { 
         setState(() {
           _secondsElapsed++;
         });
       }
+    });
+  }
+
+  void _togglePause() {
+    setState(() {
+      _isPaused = !_isPaused;
     });
   }
 
@@ -64,7 +71,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     final currentExercise = widget.workout.selectedExercises[_currentExerciseIndex];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA), // Soft light grey background
+      backgroundColor: const Color(0xFFF5F7FA), 
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -78,7 +85,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
           IconButton(
             icon: const Icon(Icons.close_rounded, color: Colors.black, size: 28),
             onPressed: () {
-              // FIX: This now correctly closes the screen
               Navigator.pop(context); 
             },
           ),
@@ -97,7 +103,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
             ),
             child: Column(
               children: [
-                const Text("ELAPSED TIME", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 12)),
+                Text(
+                  _isPaused ? "PAUSED" : "ELAPSED TIME", 
+                  style: TextStyle(color: _isPaused ? Colors.orange : Colors.grey, fontWeight: FontWeight.bold, fontSize: 12),
+                ),
                 Text(
                   _formatTime(_secondsElapsed),
                   style: const TextStyle(fontSize: 54, fontWeight: FontWeight.w900, color: Color(0xFF1A1A1A)),
@@ -134,7 +143,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFF00B4DB).withValues(alpha:0.1),
+            color: const Color(0xFF00B4DB).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Text("CURRENT EXERCISE", style: TextStyle(color: Color(0xFF00B4DB), fontWeight: FontWeight.bold, fontSize: 10)),
@@ -149,7 +158,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha:0.05), blurRadius: 15, offset: const Offset(0, 5))],
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 15, offset: const Offset(0, 5))],
           ),
           child: Column(
             children: [
@@ -196,8 +205,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                 decoration: BoxDecoration(
                   color: isActive ? const Color(0xFF1A1A1A) : (isCompleted ? Colors.green : Colors.white),
                   shape: BoxShape.circle,
-                  border: Border.all(color: isActive ? Colors.transparent : Colors.grey.withValues(alpha:0.3), width: 2),
-                  boxShadow: isActive ? [BoxShadow(color: Colors.black.withValues(alpha:0.3), blurRadius: 8, offset: const Offset(0, 4))] : [],
+                  border: Border.all(color: isActive ? Colors.transparent : Colors.grey.withValues(alpha: 0.3), width: 2),
+                  boxShadow: isActive ? [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4))] : [],
                 ),
                 child: Center(
                   child: isCompleted 
@@ -206,7 +215,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                 ),
               ),
               if (index != widget.workout.selectedExercises.length - 1)
-                Container(width: 2, height: 30, color: Colors.grey.withValues(alpha:0.2)),
+                Container(width: 2, height: 30, color: Colors.grey.withValues(alpha: 0.2)),
             ],
           );
         },
@@ -220,6 +229,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // Left Arrow: Previous Set
           _controlButton(Icons.arrow_back_ios_new_rounded, () {
             setState(() {
               if (_currentSet > 1) { _currentSet--; }
@@ -230,38 +240,44 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
             });
           }),
           
-          // Complete Set / Next Button
+          // Play/Pause button (Will display the green PLAY button first)
           GestureDetector(
-            onTap: () {
-              setState(() {
-                if (_currentSet < 4) { _currentSet++; }
-                else if (_currentExerciseIndex < widget.workout.selectedExercises.length - 1) {
-                  _currentExerciseIndex++;
-                  _currentSet = 1;
-                } else {
-                  // Finish Workout
-                  widget.workoutManager.markWorkoutAsCompleted();
-                  Navigator.pop(context);
-                }
-              });
-            },
+            onTap: _togglePause,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 15),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFF00B4DB), Color(0xFF0083B0)]),
+                gradient: LinearGradient(
+                  colors: _isPaused 
+                    ? [const Color(0xFF11998e), const Color(0xFF38ef7d)] 
+                    : [const Color(0xFF00B4DB), const Color(0xFF0083B0)]  
+                ),
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: const Color(0xFF00B4DB).withValues(alpha:0.3), blurRadius: 15, offset: const Offset(0, 8))],
+                boxShadow: [
+                  BoxShadow(
+                    color: (_isPaused ? const Color(0xFF11998e) : const Color(0xFF00B4DB)).withValues(alpha: 0.3), 
+                    blurRadius: 15, 
+                    offset: const Offset(0, 8)
+                  )
+                ],
               ),
-              child: const Text("NEXT SET", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              child: Icon(
+                _isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                color: Colors.white,
+                size: 28,
+              ),
             ),
           ),
 
+          // Right Arrow: Next Set & Finish Handler
           _controlButton(Icons.arrow_forward_ios_rounded, () {
             setState(() {
               if (_currentSet < 4) { _currentSet++; }
               else if (_currentExerciseIndex < widget.workout.selectedExercises.length - 1) {
                 _currentExerciseIndex++;
                 _currentSet = 1;
+              } else {
+                widget.workoutManager.markWorkoutAsCompleted();
+                Navigator.pop(context);
               }
             });
           }),
