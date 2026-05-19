@@ -118,9 +118,12 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> with SingleTicker
                     if (workout == null) {
                       await widget.workoutManager.addWorkout(_nameController.text, _tempSelected);
                     } else {
-                      workout.name = _nameController.text;
-                      workout.selectedExercises = List.from(_tempSelected);
-                      widget.workoutManager.notifyUI();
+                      // Call the updated backend function to modify data permanently
+                      await widget.workoutManager.updateWorkout(
+                        workout.id,
+                        _nameController.text,
+                        _tempSelected,
+                      );
                     }
                     if (mounted) Navigator.pop(context);
                   }

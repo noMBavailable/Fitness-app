@@ -143,6 +143,46 @@ class WorkoutManager extends ChangeNotifier {
     }
   }
 
+  // NEW: Firebase update synchronization handler
+  Future<void> updateWorkout(String id, String name, List<Exercise> exercises) async {
+    if (id.startsWith('w_pre_')) return; // Do not edit premade structures in backend
+
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    final List<Map<String, dynamic>> exerciseMaps = exercises.map((e) => {
+      'id': e.id,
+      'name': e.name,
+      'reps': e.reps,
+      'weight': e.weight,
+    }).toList();
+
+    try {
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('custom_workouts')
+          .doc(id)
+          .update({
+        'name': name,
+        'exercises': exerciseMaps,
+      });
+
+      int index = _customWorkouts.indexWhere((w) => w.id == id);
+      if (index != -1) {
+        _customWorkouts[index] = Workout(
+          id: id,
+          name: name,
+          selectedExercises: List.from(exercises),
+        );
+      }
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Error updating workout: $e");
+    }
+  }
+
   Future<void> deleteWorkout(String id) async {
     if (id.startsWith('w_pre_')) return;
 
