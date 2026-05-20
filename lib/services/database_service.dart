@@ -3,11 +3,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class DatabaseService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-  String get uid => FirebaseAuth.instance.currentUser!.uid;
+  
+  // FIX: Safe getter that returns null if nobody is logged in, rather than crashing with an exclamation mark (!)
+  String? get uid => FirebaseAuth.instance.currentUser?.uid;
 
   // Save
   Future<void> saveNote(String title, String content) async {
-    await _db.collection('users').doc(uid).collection('notes').add({
+    final currentUid = uid;
+    if (currentUid == null) return; // Guard clause against null crashes
+
+    await _db.collection('users').doc(currentUid).collection('notes').add({
       'title': title,
       'content': content,
       'date': Timestamp.now(),
@@ -16,7 +21,10 @@ class DatabaseService {
 
   // Update
   Future<void> updateNote(String id, String title, String content) async {
-    await _db.collection('users').doc(uid).collection('notes').doc(id).update({
+    final currentUid = uid;
+    if (currentUid == null) return;
+
+    await _db.collection('users').doc(currentUid).collection('notes').doc(id).update({
       'title': title,
       'content': content,
       'date': Timestamp.now(),
@@ -25,12 +33,21 @@ class DatabaseService {
 
   // Delete
   Future<void> deleteNote(String id) async {
-    await _db.collection('users').doc(uid).collection('notes').doc(id).delete();
+    final currentUid = uid;
+    if (currentUid == null) return;
+
+    await _db.collection('users').doc(currentUid).collection('notes').doc(id).delete();
   }
 
   // Stream (The live connection for your UI)
   Stream<QuerySnapshot> getNotesStream() {
-    return _db.collection('users').doc(uid).collection('notes')
+    final currentUid = uid;
+    if (currentUid == null) {
+      // FIX: Return an empty stream safely if no one is logged in yet, instead of throwing an error
+      return const Stream.empty(); 
+    }
+
+    return _db.collection('users').doc(currentUid).collection('notes')
         .orderBy('date', descending: true)
         .snapshots();
   }
