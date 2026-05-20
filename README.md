@@ -66,3 +66,34 @@ flutter run
 
 # Target a local desktop web browser compilation build pipeline directly
 flutter run -d chrome
+
+
+---
+Code breakdown
+
+┌─────────────────────────────────────────────────────────┐
+│                       SCREENS LAYER                     │
+│          (HomeScreen, AgendaScreen, NotesScreen)        │
+└────────────────────┬──────────────────▲─────────────────┘
+│                  │
+Dispatches User Events    Listens for Updates via
+│               notifyListeners()
+▼                  │
+┌───────────────────────────────────────┴─────────────────┐
+│                       MANAGERS LAYER                    │
+│        (WorkoutManager, WeightManager, NotesManager)    │
+└────────────────────┬────────────────────────────────────┘
+│
+Serializes Data Maps using
+▼
+┌─────────────────────────────────────────────────────────┐
+│                        MODELS LAYER                     │
+│          (Workout, Exercise, Note, WeightEntry)         │
+└────────────────────┬────────────────────────────────────┘
+│
+Pushes/Pulls via Network
+▼
+┌─────────────────────────────────────────────────────────┐
+│                     FIREBASE BACKEND                    │
+│               (Auth & Cloud Firestore Docs)             │
+└─────────────────────────────────────────────────────────1 
