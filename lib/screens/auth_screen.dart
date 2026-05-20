@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb; // Added for platform web detection
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -89,66 +90,90 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(25.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              _isLogin ? "Welcome Back" : "Create Account",
-              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: "Email"),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            TextField(
-              controller: _passwordController,
-              decoration: const InputDecoration(labelText: "Password"),
-              obscureText: true,
-            ),
-            const SizedBox(height: 10),
-            
-            // REMEMBER ME CHECKBOX ROW
-            Row(
-              children: [
-                SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: Checkbox(
-                    value: _rememberMe,
-                    activeColor: Colors.blue,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        _rememberMe = value ?? false;
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Text(
-                  "Remember Info",
-                  style: TextStyle(fontSize: 14, color: Colors.black87),
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 15),
-            ElevatedButton(
-              onPressed: _submit,
-              child: Text(_isLogin ? "Login" : "Sign Up"),
-            ),
-            TextButton(
-              onPressed: () => setState(() => _isLogin = !_isLogin),
-              child: Text(
-                _isLogin
-                    ? "Don't have an account? Sign up"
-                    : "Already have an account? Login",
+      backgroundColor: Colors.grey[100], // Clean background color behind the web card frame
+      body: Center(
+        child: Container(
+          // FIX: Clamps layout form inputs to 450px wide max on desktop web interfaces, scales to full on mobile
+          constraints: BoxConstraints(maxWidth: kIsWeb ? 450 : double.infinity),
+          padding: const EdgeInsets.all(25.0),
+          margin: EdgeInsets.all(kIsWeb ? 20.0 : 0.0),
+          decoration: BoxDecoration(
+            color: kIsWeb ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(kIsWeb ? 20 : 0),
+            boxShadow: kIsWeb 
+                ? [const BoxShadow(color: Colors.black12, blurRadius: 15, spreadRadius: 2)] 
+                : null,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min, // Packs elements vertically tight in desktop viewboxes
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                _isLogin ? "Welcome Back" : "Create Account",
+                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              TextField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: "Email"),
+                keyboardType: TextInputType.emailAddress,
+              ),
+              TextField(
+                controller: _passwordController,
+                decoration: const InputDecoration(labelText: "Password"),
+                obscureText: true,
+              ),
+              const SizedBox(height: 10),
+              
+              // REMEMBER ME CHECKBOX ROW
+              Row(
+                children: [
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: Checkbox(
+                      value: _rememberMe,
+                      activeColor: Colors.blue,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          _rememberMe = value ?? false;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    "Remember Info",
+                    style: TextStyle(fontSize: 14, color: Colors.black87),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 15),
+              SizedBox(
+                width: double.infinity, // Stretches button width to match input limits evenly
+                child: ElevatedButton(
+                  onPressed: _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text(_isLogin ? "Login" : "Sign Up", style: const TextStyle(fontSize: 16)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () => setState(() => _isLogin = !_isLogin),
+                child: Text(
+                  _isLogin
+                      ? "Don't have an account? Sign up"
+                      : "Already have an account? Login",
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

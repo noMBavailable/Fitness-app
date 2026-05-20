@@ -22,6 +22,31 @@ class _WeightModalState extends State<WeightModal> {
   void initState() {
     super.initState();
     _checkTodayWeight();
+    
+    // FIX: Set up a listener so if the account data clears or changes, 
+    // the modal updates its input text field values in real-time
+    widget.manager.addListener(_handleWeightHistoryChange);
+  }
+
+  @override
+  void dispose() {
+    widget.manager.removeListener(_handleWeightHistoryChange);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  // FIX: Reactive sync handler that forces an instant text-wipe 
+  // if an account logout clears the history collection arrays
+  void _handleWeightHistoryChange() {
+    if (!mounted) return;
+    if (widget.manager.history.isEmpty) {
+      setState(() {
+        _controller.clear();
+        _isConfirmed = false;
+      });
+    } else {
+      _checkTodayWeight();
+    }
   }
 
   void _checkTodayWeight() {
@@ -94,7 +119,6 @@ class _WeightModalState extends State<WeightModal> {
                     if (!_isConfirmed) {
                       double? value = double.tryParse(_controller.text);
                       
-                      // Enforces safety range limit verification up to 800kg maximum
                       if (value != null && value > 0 && value <= 800) {
                         widget.manager.addWeight(value);
                         FocusScope.of(context).unfocus();
@@ -108,7 +132,6 @@ class _WeightModalState extends State<WeightModal> {
                           if (mounted) setState(() => _showSuccessIcon = false);
                         });
                       } else {
-                        // Provides snackbar alert warning if input breaches boundaries
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text("Please enter a valid weight up to 800 kg"),

@@ -178,20 +178,30 @@ class _ExerciseCreationScreenState extends State<ExerciseCreationScreen> with Si
                             itemCount: widget.manager.exercises.length,
                             itemBuilder: (ctx, i) {
                               final ex = widget.manager.exercises[i];
+                              
+                              // Identify if this row is a core system premade template asset
+                              final isPremade = ex.id.startsWith('pre_');
+
                               return ListTile(
                                 title: Text(ex.name),
                                 subtitle: Text("${ex.reps} reps @ ${ex.weight} kg"),
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
+                                    // Edit button remains fully operational for all items
                                     IconButton(
                                         icon: const Icon(Icons.edit),
                                         onPressed: () => _showForm(exercise: ex)),
-                                    IconButton(
-                                        icon: const Icon(Icons.delete,
-                                            color: Colors.red),
-                                        onPressed: () =>
-                                            widget.manager.deleteExercise(ex.id)),
+                                    // Delete action transforms into a locked lock icon for premade assets
+                                    isPremade
+                                        ? const Padding(
+                                            padding: EdgeInsets.symmetric(horizontal: 12.0),
+                                            child: Icon(Icons.lock_outline_rounded, color: Colors.grey, size: 22),
+                                          )
+                                        : IconButton(
+                                            icon: const Icon(Icons.delete, color: Colors.red),
+                                            onPressed: () => widget.manager.deleteExercise(ex.id),
+                                          ),
                                   ],
                                 ),
                               );

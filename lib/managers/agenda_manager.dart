@@ -13,12 +13,18 @@ class AgendaManager extends ChangeNotifier {
 
   Map<DateTime, List<Workout>> get scheduledWorkouts => _scheduledWorkouts;
 
-  // 1. LOAD FROM FIREBASE
+  // 1. LOAD FROM FIREBASE (Updated to prevent cross-user profile leaks)
   Future<void> loadScheduledWorkouts() async {
     final user = _auth.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      _clearLocalData(); // Wipe cache instantly if user session goes invalid
+      return;
+    }
 
     try {
+      // FIX: Instantly clear out old memories from RAM cache so Account B never sees Account A's calendar
+      _scheduledWorkouts = {};
+
       final snapshot = await _firestore
           .collection('users')
           .doc(user.uid)
@@ -42,8 +48,8 @@ class AgendaManager extends ChangeNotifier {
             selectedExercises: exData.map((e) => Exercise(
               id: e['id'] ?? '',
               name: e['name'] ?? '',
-              reps: (e['reps'] as num).toInt(),
-              weight: (e['weight'] as num).toDouble(),
+              reps: (e['reps'] as num?)?.toInt() ?? 0,
+              weight: (e['weight'] as num?)?.toDouble() ?? 0.0,
             )).toList(),
           );
         }).toList();
@@ -66,8 +72,6 @@ class AgendaManager extends ChangeNotifier {
     final day = DateTime(date.year, date.month, date.day);
     final String docId = "${day.year}-${day.month}-${day.day}";
 
-    // For now, your logic replaces the day with one workout: [workout]
-    // We map the workout and its exercises to JSON
     final workoutMap = {
       'id': workout.id,
       'name': workout.name,
@@ -87,7 +91,7 @@ class AgendaManager extends ChangeNotifier {
           .doc(docId)
           .set({
         'date': day,
-        'workouts': [workoutMap], // Storing as a list for future multi-workout support
+        'workouts': [workoutMap], 
       });
 
       // Update Local
@@ -131,5 +135,11 @@ class AgendaManager extends ChangeNotifier {
   List<Workout> getWorkoutsForDay(DateTime date) {
     final day = DateTime(date.year, date.month, date.day);
     return _scheduledWorkouts[day] ?? [];
+  }
+
+  // Helper clear method invoked upon auth switches to clear calendar leaks
+  void _clearLocalData() {
+    _scheduledWorkouts = {};
+    notifyListeners();
   }
 }

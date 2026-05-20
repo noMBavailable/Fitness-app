@@ -16,12 +16,18 @@ class WeightManager extends ChangeNotifier {
 
   List<WeightEntry> get history => _history;
 
-  // 1. LOAD DATA FROM FIREBASE
+  // 1. LOAD DATA FROM FIREBASE (Updated to isolate RAM caches instantly)
   Future<void> loadWeightHistory() async {
     final user = _auth.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      _clearLocalData(); // Clean memory cache instantly if user session goes invalid
+      return;
+    }
 
     try {
+      // FIX: Purge old account elements from local memory array instantly
+      _history = [];
+
       final snapshot = await _firestore
           .collection('users')
           .doc(user.uid)
@@ -32,7 +38,7 @@ class WeightManager extends ChangeNotifier {
       _history = snapshot.docs.map((doc) {
         final data = doc.data();
         return WeightEntry(
-          (data['value'] as num).toDouble(),
+          (data['value'] as num?)?.toDouble() ?? 0.0,
           (data['date'] as Timestamp).toDate(),
         );
       }).toList();
@@ -49,7 +55,7 @@ class WeightManager extends ChangeNotifier {
     if (user == null) return;
 
     final now = DateTime.now();
-    // Create a unique key for today (e.g., "2023-10-27")
+    // Create a unique key for today (e.g., "2026-5-20")
     final String dateId = "${now.year}-${now.month}-${now.day}";
     final todayMidnight = DateTime(now.year, now.month, now.day);
 
@@ -83,5 +89,11 @@ class WeightManager extends ChangeNotifier {
     } catch (e) {
       debugPrint("Error saving weight: $e");
     }
+  }
+
+  // Helper clear method invoked upon auth switches to clear state leaks
+  void _clearLocalData() {
+    _history = [];
+    notifyListeners();
   }
 }

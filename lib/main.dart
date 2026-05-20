@@ -56,11 +56,6 @@ class _FitnessAppState extends State<FitnessApp> {
 
     // Force login on startup
     FirebaseAuth.instance.signOut();
-
-    // NEW: Fetch existing weight data from Firebase on startup
-    _weightManager.loadWeightHistory();
-    _exerciseManager.loadExercises();
-    _workoutManager.loadWorkouts();
   }
 
   @override
@@ -78,6 +73,14 @@ class _FitnessAppState extends State<FitnessApp> {
           }
 
           if (snapshot.hasData) {
+            // FIX: Triggers immediate data-reloads to refresh local memory state on login switch
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _weightManager.loadWeightHistory();
+              _exerciseManager.loadExercises();
+              _workoutManager.loadWorkouts();
+              _agendaManager.loadScheduledWorkouts();
+            });
+
             return FitnessHomeScreen(
               navManager: _navManager,
               weightManager: _weightManager,

@@ -73,7 +73,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> with SingleTicker
       ),
       builder: (ctx) => Center(
         child: Container(
-          // FIX: Bounds the popup workout editor sheet inputs cleanly on web screens
+          // Bounds the popup workout editor sheet inputs cleanly on web screens
           constraints: BoxConstraints(maxWidth: kIsWeb ? 450 : double.infinity),
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(ctx).viewInsets.bottom,
@@ -145,7 +145,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> with SingleTicker
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFEEEEEE),
-      // FIX: Keeps the pulsed workout-addition button inside the 450px content column layout zone on desktop screens
+      // Keeps the pulsed workout-addition button inside the 450px content column layout zone on desktop screens
       floatingActionButton: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 450),
@@ -188,7 +188,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> with SingleTicker
               Expanded(
                 child: Center(
                   child: Container(
-                    // FIX: Restricts the core list item configurations to 450px wide layout boundaries on web targets
+                    // Restricts the core list item configurations to 450px wide layout boundaries on web targets
                     constraints: BoxConstraints(maxWidth: kIsWeb ? 450 : double.infinity),
                     child: ListenableBuilder(
                       listenable: widget.workoutManager,
@@ -204,6 +204,10 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> with SingleTicker
                           itemCount: workouts.length,
                           itemBuilder: (context, index) {
                             final workout = workouts[index];
+                            
+                            // Identify if this workout item row is a system-wide premade template asset
+                            final isPremade = workout.id.startsWith('w_pre_');
+
                             return ListTile(
                               leading: const Icon(Icons.fitness_center),
                               title: Text(workout.name),
@@ -211,16 +215,23 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> with SingleTicker
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
+                                  // Edit Button: Always available for both premade and custom workouts
                                   IconButton(
                                     icon: const Icon(Icons.edit),
                                     onPressed: () => _showWorkoutForm(workout: workout),
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete, color: Colors.red),
-                                    onPressed: () {
-                                      widget.workoutManager.deleteWorkout(workout.id);
-                                    },
-                                  ),
+                                  // Delete Action Container: Show red trash button for custom, lock icon for premade templates
+                                  isPremade
+                                      ? const Padding(
+                                          padding: EdgeInsets.symmetric(horizontal: 12.0),
+                                          child: Icon(Icons.lock_outline_rounded, color: Colors.grey, size: 22),
+                                        )
+                                      : IconButton(
+                                          icon: const Icon(Icons.delete, color: Colors.red),
+                                          onPressed: () {
+                                            widget.workoutManager.deleteWorkout(workout.id);
+                                          },
+                                        ),
                                 ],
                               ),
                             );

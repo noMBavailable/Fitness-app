@@ -23,12 +23,18 @@ class ExerciseManager extends ChangeNotifier {
   // Getter that combines both for your UI
   List<Exercise> get exercises => [..._premadeExercises, ..._customExercises];
 
-  // LOAD DATA FROM FIREBASE (Like loadWeightHistory)
+  // LOAD DATA FROM FIREBASE (Updated to isolate RAM caches instantly)
   Future<void> loadExercises() async {
     final user = _auth.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      _clearLocalData(); // Clean memory cache instantly if user session goes invalid
+      return;
+    }
 
     try {
+      // FIX: Purge old account elements from local memory array instantly
+      _customExercises = [];
+
       final snapshot = await _firestore
           .collection('users')
           .doc(user.uid)
@@ -40,8 +46,8 @@ class ExerciseManager extends ChangeNotifier {
         return Exercise(
           id: doc.id,
           name: data['name'] ?? '',
-          reps: (data['reps'] as num).toInt(),
-          weight: (data['weight'] as num).toDouble(),
+          reps: (data['reps'] as num?)?.toInt() ?? 0,
+          weight: (data['weight'] as num?)?.toDouble() ?? 0.0,
         );
       }).toList();
 
@@ -51,12 +57,11 @@ class ExerciseManager extends ChangeNotifier {
     }
   }
 
-  // ADD/SAVE TO FIREBASE (Like addWeight)
+  // ADD/SAVE TO FIREBASE
   Future<void> addExercise(String name, int reps, double weight) async {
     final user = _auth.currentUser;
     if (user == null) return;
 
-    // Use timestamp as ID (or Firestore auto-id)
     final String exerciseId = DateTime.now().millisecondsSinceEpoch.toString();
 
     try {
@@ -132,5 +137,11 @@ class ExerciseManager extends ChangeNotifier {
     } catch (e) {
       debugPrint("Error deleting exercise: $e");
     }
+  }
+
+  // Helper clear method invoked upon auth switches to clear state leaks
+  void _clearLocalData() {
+    _customExercises = [];
+    notifyListeners();
   }
 }

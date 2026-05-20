@@ -28,9 +28,11 @@ class WorkoutManager extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _firestore.collection('users').doc(user.uid).update({
+      // FIX: Changed from .update() to .set(..., SetOptions(merge: true)) 
+      // This safely updates old profiles, but creates the root document automatically if it's a new sign-up account!
+      await _firestore.collection('users').doc(user.uid).set({
         'lastCompletedDate': Timestamp.fromDate(_lastCompletedDate!),
-      });
+      }, SetOptions(merge: true));
     } catch (e) {
       debugPrint("Error saving completion status: $e");
     }
@@ -63,15 +65,22 @@ class WorkoutManager extends ChangeNotifier {
 
   List<Workout> get workouts => [..._premadeWorkouts, ..._customWorkouts];
 
-  // UPDATED LOAD: Now also loads the lastCompletedDate
+  // UPDATED LOAD: Now correctly purges local RAM memory state to fix cross-user leak issues
   Future<void> loadWorkouts() async {
     final user = _auth.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      _clearLocalData(); // Clear state if no user is present
+      return;
+    }
 
     try {
+      // FIX: Instantly clear out old memories from RAM cache arrays so Account B never sees Account A's workouts
+      _customWorkouts = [];
+      _lastCompletedDate = null;
+
       // 1. Load User Profile for completion status
       final userDoc = await _firestore.collection('users').doc(user.uid).get();
-      if (userDoc.exists && userDoc.data()!.containsKey('lastCompletedDate')) {
+      if (userDoc.exists && userDoc.data() != null && userDoc.data()!.containsKey('lastCompletedDate')) {
         _lastCompletedDate = (userDoc.data()!['lastCompletedDate'] as Timestamp).toDate();
       }
 
@@ -89,8 +98,8 @@ class WorkoutManager extends ChangeNotifier {
         List<Exercise> loadedExercises = exData.map((e) => Exercise(
           id: e['id'] ?? '',
           name: e['name'] ?? '',
-          reps: (e['reps'] as num).toInt(),
-          weight: (e['weight'] as num).toDouble(),
+          reps: (e['reps'] as num?)?.toInt() ?? 0,
+          weight: (e['weight'] as num?)?.toDouble() ?? 0.0,
         )).toList();
 
         return Workout(
@@ -143,9 +152,8 @@ class WorkoutManager extends ChangeNotifier {
     }
   }
 
-  // NEW: Firebase update synchronization handler
   Future<void> updateWorkout(String id, String name, List<Exercise> exercises) async {
-    if (id.startsWith('w_pre_')) return; // Do not edit premade structures in backend
+    if (id.startsWith('w_pre_')) return; 
 
     final user = _auth.currentUser;
     if (user == null) return;
@@ -202,6 +210,13 @@ class WorkoutManager extends ChangeNotifier {
     } catch (e) {
       debugPrint("Error deleting workout: $e");
     }
+  }
+
+  // Helper logic to clear user variables entirely upon app signouts
+  void _clearLocalData() {
+    _customWorkouts = [];
+    _lastCompletedDate = null;
+    notifyListeners();
   }
 
   void notifyUI() => notifyListeners();

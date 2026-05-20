@@ -55,8 +55,15 @@ class CustomHeader extends StatelessWidget {
               color: Colors.white
             ),
             onPressed: () async {
-              // Gracefully sign out the user session from Firebase
+              // 1. Gracefully sign out the user session from Firebase
               await FirebaseAuth.instance.signOut();
+
+              // 2. FIX: Check if there are pushed sub-screens sitting on top of the core app stack.
+              // If we are currently on a pushed screen (like the Weight Graph), this safely pops 
+              // all historical routes all the way back to the main navigation shell root.
+              if (context.mounted && Navigator.of(context).canPop()) {
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              }
             },
           ),
         ],
