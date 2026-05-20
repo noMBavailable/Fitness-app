@@ -1,3 +1,5 @@
+// --- DATA MODEL ---
+// Represents a single note instance containing title, body text, and its timestamp log.
 class Note {
   final String id;
   final String title;

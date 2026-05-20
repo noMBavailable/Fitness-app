@@ -1,3 +1,5 @@
+// --- DATA MODEL ---
+// Represents a single weightlifting exercise item holding targeted sets specifications metrics.
 class Exercise {
   String id;
   String name;

@@ -22,20 +22,25 @@ class ActiveWorkoutScreen extends StatefulWidget {
 }
 
 class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
-  Timer? _timer;
-  int _secondsElapsed = 0;
-  int _currentExerciseIndex = 0;
-  int _currentSet = 1;
-  bool _isPaused = true; // Workout starts paused
+  // --- STATE VARIABLES ---
+  Timer? _timer;               // Handles the ticking second increment background thread
+  int _secondsElapsed = 0;     // Keeps track of cumulative active workout time
+  int _currentExerciseIndex = 0; // Pointer index for active workout track lists
+  int _currentSet = 1;         // Standard local tracking index bounded up to 4
+  bool _isPaused = true;       // Safeguard status to start sessions on explicit user command
 
   @override
   void initState() {
     super.initState();
-    _startTimer();
+    _startTimer(); // Boot up timer system sequence on page initialization
   }
 
+  // --- BUSINESS LOGIC FUNCTIONS ---
+
+  // Instantiates a periodic 1-second checker to increment session timer
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      // Only process state modification if screen is currently active and not paused
       if (mounted && !_isPaused) { 
         setState(() {
           _secondsElapsed++;
@@ -44,37 +49,39 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     });
   }
 
+  // Switches between ticking active timeline states
   void _togglePause() {
     setState(() {
       _isPaused = !_isPaused;
     });
   }
 
+  // Converts total raw integers into a standard MM:SS display format
   String _formatTime(int seconds) {
     final mins = (seconds ~/ 60).toString().padLeft(2, '0');
     final secs = (seconds % 60).toString().padLeft(2, '0');
     return "$mins:$secs";
   }
 
-  // --- NEW: WORKOUT COMPLETION CELEBRATION DIALOG ---
+  // Handles total system cleanup and success routing upon routine completion
   void _finishWorkout() {
-    // 1. Stop the running timer loop immediately
+    // 1. Kill the background timer loop execution context
     _timer?.cancel();
     
-    // 2. Push the completion data to Cloud Firestore backend
+    // 2. Synchronize completion timestamp log properties to Firebase
     widget.workoutManager.markWorkoutAsCompleted();
 
-    // 3. Display an awesome completion pop-up alert card
+    // 3. Show un-dismissible completion success feedback card
     showDialog(
       context: context,
-      barrierDismissible: false, // User must press the button to exit
+      barrierDismissible: false, // Forces intentional action on the exit button
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 10),
-            // Glowing Success Trophy/Check circle icon
+            // Decorative container rendering a success trophy
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -95,7 +102,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
               style: const TextStyle(color: Colors.grey),
             ),
             const Divider(height: 30),
-            // Display total elapsed active workout time duration inside the card
+            // Duration metrics feedback display container
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -108,15 +115,13 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
               ],
             ),
             const SizedBox(height: 25),
-            // Finish & Close Button
+            // Navigation dismiss action button redirecting out of the sub-stack layout
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  // Dismiss the popup alert dialog card
-                  Navigator.pop(ctx);
-                  // Pop the active workout screen to return safely back to Home base layout
-                  Navigator.pop(context);
+                  Navigator.pop(ctx);     // Dissolves the active popup container dialog
+                  Navigator.pop(context); // Pops active screen view track back to root
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,
@@ -134,16 +139,19 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _timer?.cancel(); // Kill any remaining loops when layout leaves tracking loop contexts
     super.dispose();
   }
 
+  // --- UI TREE LAYOUT RENDERING ---
   @override
   Widget build(BuildContext context) {
+    // Return empty fallback scaffold if an asset layout contains empty collections
     if (widget.workout.selectedExercises.isEmpty) {
       return const Scaffold(body: Center(child: Text("No exercises in this workout")));
     }
 
+    // Reference context to compile matching indices configurations
     final currentExercise = widget.workout.selectedExercises[_currentExerciseIndex];
 
     return Scaffold(
@@ -161,7 +169,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
           IconButton(
             icon: const Icon(Icons.close_rounded, color: Colors.black, size: 28),
             onPressed: () {
-              Navigator.pop(context); 
+              Navigator.pop(context); // Quick close button out of workout routine
             },
           ),
           const SizedBox(width: 8),
@@ -169,7 +177,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
       ),
       body: Column(
         children: [
-          // Timer Section
+          // Timer Block: Displays elapsed metrics at layout columns head sections
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 20),
@@ -191,10 +199,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
             ),
           ),
           
+          // Primary View Layout Core: Left hand sidebar node array alongside central panels
           Expanded(
             child: Row(
               children: [
-                _buildSidebar(),
+                _buildSidebar(), // Keeps tracking index positions visual elements on layout bounds
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
@@ -205,13 +214,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
             ),
           ),
           
-          _buildControls(),
+          _buildControls(), // Active session interaction control modules
           const SizedBox(height: 40),
         ],
       ),
     );
   }
 
+  // Renders descriptions and workout specifics targeting current exercise configurations
   Widget _buildMainContent(Exercise exercise) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -228,7 +238,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
         Text(exercise.name, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, height: 1.1)),
         const SizedBox(height: 25),
         
-        // Stats Card
+        // Exercise Specifications Metadata display column sheet block
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -250,6 +260,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     );
   }
 
+  // Flex alignment structural component wrapper inside individual rows mappings
   Widget _buildStatRow(String label, String value, IconData icon) {
     return Row(
       children: [
@@ -262,6 +273,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     );
   }
 
+  // Left vertical navigation strip tracking list array progress metrics states
   Widget _buildSidebar() {
     return Container(
       width: 90,
@@ -290,6 +302,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                     : Text("${index + 1}", style: TextStyle(color: isActive ? Colors.white : Colors.grey, fontWeight: FontWeight.bold)),
                 ),
               ),
+              // Render line connector paths unless dealing with tail elements mappings
               if (index != widget.workout.selectedExercises.length - 1)
                 Container(width: 2, height: 30, color: Colors.grey.withValues(alpha: 0.2)),
             ],
@@ -299,24 +312,25 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     );
   }
 
+  // Footer navigation actions handling state transitions
   Widget _buildControls() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 30),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Left Arrow: Previous Set
+          // Left Arrow: Reverts current set counts or downshifts indexes backwards
           _controlButton(Icons.arrow_back_ios_new_rounded, () {
             setState(() {
               if (_currentSet > 1) { _currentSet--; }
               else if (_currentExerciseIndex > 0) {
                 _currentExerciseIndex--;
-                _currentSet = 4;
+                _currentSet = 4; // Safely default back up to tail bounds
               }
             });
           }),
           
-          // Play/Pause button
+          // Central interaction button toggling session timer increments
           GestureDetector(
             onTap: _togglePause,
             child: Container(
@@ -324,8 +338,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: _isPaused 
-                    ? [const Color(0xFF11998e), const Color(0xFF38ef7d)] 
-                    : [const Color(0xFF00B4DB), const Color(0xFF0083B0)]  
+                    ? [const Color(0xFF11998e), const Color(0xFF38ef7d)]  // Green system theme
+                    : [const Color(0xFF00B4DB), const Color(0xFF0083B0)]  // Blue running theme
                 ),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
@@ -344,15 +358,15 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
             ),
           ),
 
-          // Right Arrow: Next Set & Finish Handler
+          // Right Arrow: Increments track pointers forward or routes closure routines
           _controlButton(Icons.arrow_forward_ios_rounded, () {
             setState(() {
               if (_currentSet < 4) { _currentSet++; }
               else if (_currentExerciseIndex < widget.workout.selectedExercises.length - 1) {
                 _currentExerciseIndex++;
-                _currentSet = 1;
+                _currentSet = 1; // Safely reset tracking index numbers values back down
               } else {
-                // MODIFIED: Instead of silently popping out, trigger the celebration flow!
+                // If every set and index has been exhausted, run completion logic loop 
                 _finishWorkout();
               }
             });
@@ -362,6 +376,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     );
   }
 
+  // Base layout abstract icon action button wrapper
   Widget _controlButton(IconData icon, VoidCallback onTap) {
     return IconButton(
       icon: Icon(icon, size: 28, color: Colors.black54),

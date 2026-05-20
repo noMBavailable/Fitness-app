@@ -18,11 +18,12 @@ class ExerciseCreationScreen extends StatefulWidget {
 }
 
 class _ExerciseCreationScreenState extends State<ExerciseCreationScreen> with SingleTickerProviderStateMixin {
+  // --- FORM INPUT CONTROLLERS ---
   final _nameController = TextEditingController();
   final _repsController = TextEditingController();
   final _weightController = TextEditingController();
 
-  // Animation setup
+  // --- PULSING BUTTON ANIMATION ---
   AnimationController? _controller;
   late Animation<double> _pulseAnimation;
 
@@ -30,17 +31,19 @@ class _ExerciseCreationScreenState extends State<ExerciseCreationScreen> with Si
   void initState() {
     super.initState();
 
+    // Sets up a continuous looping animation for the add button floating on screen
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
 
+    // Scales the button up to 1.15x size and back down smoothly
     _pulseAnimation = TweenSequence([
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.15), weight: 50),
       TweenSequenceItem(tween: Tween(begin: 1.15, end: 1.0), weight: 50),
     ]).animate(CurvedAnimation(parent: _controller!, curve: Curves.easeInOut));
 
-    _controller!.repeat();
+    _controller!.repeat(); // Starts the loop immediately
   }
 
   @override
@@ -52,12 +55,17 @@ class _ExerciseCreationScreenState extends State<ExerciseCreationScreen> with Si
     super.dispose();
   }
 
+  // --- OVERLAY INPUT POPUP ---
+  
+  // Displays the bottom input form overlay sheet for managing exercise metrics data
   void _showForm({Exercise? exercise}) {
+    // If an item was clicked, pass existing variables to the inputs (Edit Mode)
     if (exercise != null) {
       _nameController.text = exercise.name;
       _repsController.text = exercise.reps.toString();
       _weightController.text = exercise.weight.toString();
     } else {
+      // Clear data to start completely fresh (Create Mode)
       _nameController.clear();
       _repsController.clear();
       _weightController.clear();
@@ -65,21 +73,21 @@ class _ExerciseCreationScreenState extends State<ExerciseCreationScreen> with Si
 
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
+      isScrollControlled: true, // Pushes fields upward smoothly when a keyboard slides open
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => Center(
         child: Container(
-          // FIX: Keeps the bottom sheet form input width compact on desktop web views
+          // Bounds the sheet layout to 450px maximum on wide desktop environments
           constraints: BoxConstraints(maxWidth: kIsWeb ? 450 : double.infinity),
           padding: EdgeInsets.only(
-              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom, // Adds spacing for the software keyboard
               left: 20,
               right: 20,
               top: 20),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: MainAxisSize.min, // Hugs content tight vertically
             children: [
               TextField(
                   controller: _nameController,
@@ -100,11 +108,13 @@ class _ExerciseCreationScreenState extends State<ExerciseCreationScreen> with Si
                   final weight = double.tryParse(_weightController.text) ?? 0.0;
 
                   if (exercise == null) {
+                    // Send new payload parameters straight to cloud create channel paths
                     widget.manager.addExercise(name, reps, weight);
                   } else {
+                    // Modify database keys inside target model index routes mapping
                     widget.manager.updateExercise(exercise.id, name, reps, weight);
                   }
-                  Navigator.pop(context);
+                  Navigator.pop(context); // Close sheet overlay safely
                 },
                 child: Text(exercise == null ? 'Add' : 'Update'),
               ),
@@ -116,11 +126,13 @@ class _ExerciseCreationScreenState extends State<ExerciseCreationScreen> with Si
     );
   }
 
+  // --- INTERFACE BUILD TREE ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFEEEEEE),
-      // FIX: Bounds the floating creation button inside the 450px column limit on browser screens
+      
+      // Center + Container block handles responsive placement constraints for desktop column systems
       floatingActionButton: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 450),
@@ -129,7 +141,7 @@ class _ExerciseCreationScreenState extends State<ExerciseCreationScreen> with Si
           child: _controller == null
               ? const SizedBox.shrink()
               : ScaleTransition(
-                  scale: _pulseAnimation,
+                  scale: _pulseAnimation, // Attaches our custom sizing animation framework
                   child: Container(
                     height: 75,
                     width: 75,
@@ -150,7 +162,7 @@ class _ExerciseCreationScreenState extends State<ExerciseCreationScreen> with Si
                       ],
                     ),
                     child: FloatingActionButton(
-                      onPressed: () => _showForm(),
+                      onPressed: () => _showForm(), // Opens creation menu bottom sheet
                       backgroundColor: Colors.transparent,
                       elevation: 0,
                       highlightElevation: 0,
@@ -168,18 +180,18 @@ class _ExerciseCreationScreenState extends State<ExerciseCreationScreen> with Si
               Expanded(
                 child: Center(
                   child: Container(
-                    // FIX: Clamps the list view rows to a clean width on Web viewports
+                    // Web lock constraint rule: Keeps data item layout rows to 450px max width on desktop viewports
                     constraints: BoxConstraints(maxWidth: kIsWeb ? 450 : double.infinity),
                     child: ListenableBuilder(
                         listenable: widget.manager,
                         builder: (context, _) {
                           return ListView.builder(
-                            padding: const EdgeInsets.only(bottom: 160),
+                            padding: const EdgeInsets.only(bottom: 160), // Extra space to scroll above nav bar dock
                             itemCount: widget.manager.exercises.length,
                             itemBuilder: (ctx, i) {
                               final ex = widget.manager.exercises[i];
                               
-                              // Identify if this row is a core system premade template asset
+                              // Check parameter string logic: Identifies default system template models
                               final isPremade = ex.id.startsWith('pre_');
 
                               return ListTile(
@@ -188,11 +200,11 @@ class _ExerciseCreationScreenState extends State<ExerciseCreationScreen> with Si
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    // Edit button remains fully operational for all items
+                                    // Edit configuration action trigger: Left active and open for all index targets
                                     IconButton(
                                         icon: const Icon(Icons.edit),
                                         onPressed: () => _showForm(exercise: ex)),
-                                    // Delete action transforms into a locked lock icon for premade assets
+                                    // Delete mechanism constraint block: Custom entries show red trash bin, premade arrays show secure lock icon
                                     isPremade
                                         ? const Padding(
                                             padding: EdgeInsets.symmetric(horizontal: 12.0),
@@ -213,6 +225,8 @@ class _ExerciseCreationScreenState extends State<ExerciseCreationScreen> with Si
               )
             ],
           ),
+          
+          // Floating navigation alignment parameters structural element hook
           Align(
               alignment: const Alignment(0, 0.92),
               child: SwipeNavDock(manager: widget.navManager)),

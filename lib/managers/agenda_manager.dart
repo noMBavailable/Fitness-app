@@ -5,24 +5,29 @@ import '../models/workout_model.dart';
 import '../models/exercise_model.dart';
 
 class AgendaManager extends ChangeNotifier {
+  // Instantiates underlying entry points to cloud database nodes and session authentications
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // The "Master Schedule"
+  // --- THE MASTER TIMELINE SCHEDULE ---
+  // Maps specific normalized calendar dates to their allocated collection of workout routines
   Map<DateTime, List<Workout>> _scheduledWorkouts = {};
 
+  // Public state accessor exposing calendar mappings to frontend UI components
   Map<DateTime, List<Workout>> get scheduledWorkouts => _scheduledWorkouts;
 
-  // 1. LOAD FROM FIREBASE (Updated to prevent cross-user profile leaks)
+  // --- 1. DOWNLOAD TIMELINE DATA ---
+  // Connects to Firebase to fetch all historical and future calendar planning logs
   Future<void> loadScheduledWorkouts() async {
     final user = _auth.currentUser;
     if (user == null) {
-      _clearLocalData(); // Wipe cache instantly if user session goes invalid
+      _clearLocalData(); // Flush cached arrays out of memory if session states return null
       return;
     }
 
     try {
-      // FIX: Instantly clear out old memories from RAM cache so Account B never sees Account A's calendar
+      // DATA CLEANUP FIX: Instantly empty out RAM tracking cache maps before loading items 
+      // to guarantee legacy records never bleed across profile signout transactions
       _scheduledWorkouts = {};
 
       final snapshot = await _firestore
@@ -33,13 +38,17 @@ class AgendaManager extends ChangeNotifier {
 
       Map<DateTime, List<Workout>> loadedData = {};
 
+      // Parse individual daily snapshot containers
       for (var doc in snapshot.docs) {
         final data = doc.data();
         final DateTime date = (data['date'] as Timestamp).toDate();
+        
+        // Normalize timestamps to exact midnight blocks to ensure perfect structural lookup mapping
         final dayKey = DateTime(date.year, date.month, date.day);
         
         final List<dynamic> workoutsData = data['workouts'] ?? [];
 
+        // De-serialize nested object maps back into native dynamic models matrices
         List<Workout> workouts = workoutsData.map((w) {
           final List<dynamic> exData = w['exercises'] ?? [];
           return Workout(
@@ -58,20 +67,23 @@ class AgendaManager extends ChangeNotifier {
       }
 
       _scheduledWorkouts = loadedData;
-      notifyListeners();
+      notifyListeners(); // Request framework re-renders across active calendar widgets listeners
     } catch (e) {
       debugPrint("Error loading agenda: $e");
     }
   }
 
-  // 2. ADD / SCHEDULE TO FIREBASE
+  // --- 2. SCHEDULE ACTION PATHWAY ---
+  // Binds a designated workout layout object blueprint onto a specific target calendar grid space
   Future<void> scheduleWorkout(DateTime date, Workout workout) async {
     final user = _auth.currentUser;
     if (user == null) return;
 
+    // Standardize time frames to midnight parameters to guarantee uniform index keys mapping
     final day = DateTime(date.year, date.month, date.day);
     final String docId = "${day.year}-${day.month}-${day.day}";
 
+    // Flatten nested layout classes down into serializable data maps matrices structures
     final workoutMap = {
       'id': workout.id,
       'name': workout.name,
@@ -84,6 +96,7 @@ class AgendaManager extends ChangeNotifier {
     };
 
     try {
+      // Push document parameters straight to targeted day slots inside the database storage structure
       await _firestore
           .collection('users')
           .doc(user.uid)
@@ -91,10 +104,10 @@ class AgendaManager extends ChangeNotifier {
           .doc(docId)
           .set({
         'date': day,
-        'workouts': [workoutMap], 
+        'workouts': [workoutMap], // Stores training maps inside structured array lists fields
       });
 
-      // Update Local
+      // Mirror push routines inside local RAM arrays to handle instant UI workflow updates safely
       _scheduledWorkouts[day] = [workout];
       notifyListeners();
     } catch (e) {
@@ -102,7 +115,8 @@ class AgendaManager extends ChangeNotifier {
     }
   }
 
-  // 3. REMOVE FROM FIREBASE
+  // --- 3. DISMISS ACTION PATHWAY ---
+  // Erases an allocated routine record item out of the chosen calendar timestamp list track
   Future<void> removeWorkoutFromDay(DateTime date, dynamic workout) async {
     final user = _auth.currentUser;
     if (user == null) return;
@@ -111,13 +125,15 @@ class AgendaManager extends ChangeNotifier {
     final String docId = "${day.year}-${day.month}-${day.day}";
 
     try {
-      // Local check
       if (_scheduledWorkouts.containsKey(day)) {
+        // Evict targeted id elements from local timeline tracking scopes
         _scheduledWorkouts[day]!.removeWhere((w) => w.id == workout.id);
 
+        // Clean-up rule: If no activities remain on that calendar day row, drop the node entirely
         if (_scheduledWorkouts[day]!.isEmpty) {
           _scheduledWorkouts.remove(day);
-          // Delete document from Firebase if no workouts left for that day
+          
+          // Remove document from Cloud collections if empty to save storage space
           await _firestore
               .collection('users')
               .doc(user.uid)
@@ -132,12 +148,14 @@ class AgendaManager extends ChangeNotifier {
     }
   }
 
+  // --- 4. DATA RETRIEVAL HELPER ---
+  // Explicit lookup query parameter tool fetching scheduled events lists for selected target days
   List<Workout> getWorkoutsForDay(DateTime date) {
     final day = DateTime(date.year, date.month, date.day);
     return _scheduledWorkouts[day] ?? [];
   }
 
-  // Helper clear method invoked upon auth switches to clear calendar leaks
+  // Local caching clear script executed automatically upon system logout commands
   void _clearLocalData() {
     _scheduledWorkouts = {};
     notifyListeners();

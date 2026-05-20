@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb; // Added for web environment checking
+import 'package:flutter/foundation.dart' show kIsWeb; // Needed for responsive layout checks
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../managers/weight_manager.dart';
@@ -19,7 +19,7 @@ class WeightGraphScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Find the maximum weight entry in history to scale dynamically
+    // 1. Calculate the peak weight entry in history to scale the graph heights dynamically
     double maxWeightInHistory = 0.0;
     for (var entry in manager.history) {
       if (entry.value > maxWeightInHistory) {
@@ -27,14 +27,14 @@ class WeightGraphScreen extends StatelessWidget {
       }
     }
 
-    // 2. Set a dynamic ceiling and interval so the labels stay perfectly clean
-    double dynamicMaxY = 100.0; // Starting baseline ceiling
-    double labelInterval = 20.0; // Starting baseline step (0, 20, 40, 60, 80...)
+    // 2. Determine variable height steps and ceilings to keep data axis ticks clean and uncrowded
+    double dynamicMaxY = 100.0;  // Baseline graph ceiling height
+    double labelInterval = 20.0; // Baseline numerical step (0, 20, 40...)
 
     if (maxWeightInHistory > 0) {
       if (maxWeightInHistory <= 100) {
         dynamicMaxY = 100;
-        labelInterval = 20; // Max 5 labels (Clean!)
+        labelInterval = 20; // Max 5 labels
       } else if (maxWeightInHistory <= 200) {
         dynamicMaxY = 200;
         labelInterval = 40; // Max 5 labels
@@ -42,18 +42,18 @@ class WeightGraphScreen extends StatelessWidget {
         dynamicMaxY = 400;
         labelInterval = 100; // Max 4 labels
       } else {
-        dynamicMaxY = 800; // Hard limit fallback
+        dynamicMaxY = 800; // Hard threshold safety barrier
         labelInterval = 200; // Max 4 labels
       }
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFEEEEEE), // Global layout background color
+      backgroundColor: const Color(0xFFEEEEEE), // Global framework backdrop color
       body: Stack(
         children: [
           Column(
             children: [
-              // Top bar continues to expand 100% full stretch width across widescreen viewports
+              // Global tracking layout header block: showBackButton enables pop navigation paths
               const CustomHeader(
                 title: "Weight History",
                 showBackButton: true,
@@ -62,11 +62,11 @@ class WeightGraphScreen extends StatelessWidget {
               Expanded(
                 child: Center(
                   child: Container(
-                    // FIX: Restricts the chart mesh grid lines and historical data rows to 450px on web targets
+                    // RESPONSIVE CLAUSE: Clamps chart grid mesh and table sheets to 450px on desktop web systems
                     constraints: BoxConstraints(maxWidth: kIsWeb ? 450 : double.infinity),
                     child: Column(
                       children: [
-                        // GRAPH SECTION
+                        // --- GRAPH DISPLAY SECTION ---
                         Container(
                           height: 320,
                           padding: const EdgeInsets.fromLTRB(15, 40, 25, 10),
@@ -75,24 +75,25 @@ class WeightGraphScreen extends StatelessWidget {
                               : LineChart(
                                   LineChartData(
                                     minY: 0,
-                                    maxY: dynamicMaxY, // Adapts seamlessly based on current data
+                                    maxY: dynamicMaxY, // Plugs in our dynamically calculated vertical scale range limit
                                     gridData: FlGridData(
                                       show: true,
-                                      drawVerticalLine: false,
+                                      drawVerticalLine: false, // Disables vertical bars to maximize layout clarity
                                       horizontalInterval: labelInterval, 
                                       getDrawingHorizontalLine: (value) => FlLine(
-                                        color: Colors.black.withValues(alpha: 0.05),
+                                        color: Colors.black.withValues(alpha: 0.05), // Faint grid mesh background lines
                                         strokeWidth: 1,
                                       ),
                                     ),
                                     titlesData: FlTitlesData(
                                       topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                                       rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                      // --- ADAPTIVE Y-AXIS CONFIGURATION ---
+                                      
+                                      // Y-AXIS MEASUREMENT CONFIGURATIONS
                                       leftTitles: AxisTitles(
                                         sideTitles: SideTitles(
                                           showTitles: true,
-                                          interval: labelInterval, // Adjusts dynamically to prevent crowding
+                                          interval: labelInterval, // Matches side numbering tags to background grid offsets
                                           reservedSize: 45,
                                           getTitlesWidget: (value, meta) {
                                             if (value < 0 || value > dynamicMaxY) return const SizedBox.shrink();
@@ -104,11 +105,12 @@ class WeightGraphScreen extends StatelessWidget {
                                           },
                                         ),
                                       ),
-                                      // --- X-AXIS CONFIGURATION ---
+                                      
+                                      // X-AXIS TIMELINE CONFIGURATIONS
                                       bottomTitles: AxisTitles(
                                         sideTitles: SideTitles(
                                           showTitles: true,
-                                          interval: 1, 
+                                          interval: 1, // Steps incrementally across every entry snapshot in history 
                                           reservedSize: 30,
                                           getTitlesWidget: (value, meta) {
                                             int index = value.toInt();
@@ -117,7 +119,7 @@ class WeightGraphScreen extends StatelessWidget {
                                               return Padding(
                                                 padding: const EdgeInsets.only(top: 8.0),
                                                 child: Text(
-                                                  DateFormat('dd/MM').format(date),
+                                                  DateFormat('dd/MM').format(date), // Formats date keys to standard shorthand day/month displays
                                                   style: const TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold),
                                                 ),
                                               );
@@ -135,21 +137,22 @@ class WeightGraphScreen extends StatelessWidget {
                                       ),
                                     ),
                                     lineBarsData: [
+                                      // Data Spline Vector Setup Layer
                                       LineChartBarData(
                                         spots: manager.history.asMap().entries.map((entry) {
                                           return FlSpot(
-                                            entry.key.toDouble(),
-                                            entry.value.value.toDouble(),
+                                            entry.key.toDouble(), // Coordinates progress based on timeline index mappings
+                                            entry.value.value.toDouble(), // Tracks numerical weight values
                                           );
                                         }).toList(),
-                                        isCurved: true,
+                                        isCurved: true, // Smooths data point vector intersection junctions
                                         curveSmoothness: 0.35,
                                         color: Colors.blueAccent,
                                         barWidth: 4,
-                                        dotData: const FlDotData(show: true),
+                                        dotData: const FlDotData(show: true), // Draws specific target circle markers onto indexes
                                         belowBarData: BarAreaData(
                                           show: true,
-                                          color: Colors.blueAccent.withValues(alpha: 0.1),
+                                          color: Colors.blueAccent.withValues(alpha: 0.1), // Gentle gradient backdrop under the graph line
                                         ),
                                       ),
                                     ],
@@ -157,12 +160,14 @@ class WeightGraphScreen extends StatelessWidget {
                                 ),
                         ),
                         const Divider(),
-                        // LIST SECTION
+                        
+                        // --- CHRONOLOGICAL DATA LIST VIEW SECTION ---
                         Expanded(
                           child: ListView.builder(
-                            padding: const EdgeInsets.only(bottom: 120), 
+                            padding: const EdgeInsets.only(bottom: 120), // Adds vertical padding buffer to float list above navigation docks
                             itemCount: manager.history.length,
                             itemBuilder: (context, index) {
+                              // Reverses array loops mapping so newest metric entries render at top rows positions
                               final entry = manager.history.reversed.toList()[index];
                               return ListTile(
                                 leading: const Icon(Icons.monitor_weight),
@@ -180,7 +185,7 @@ class WeightGraphScreen extends StatelessWidget {
             ],
           ),
           
-          // Navigation bar spans the full length layout profile cleanly
+          // Primary Navigation Menu Dock Overlay module position alignment parameters
           Align(
             alignment: const Alignment(0, 0.92),
             child: SwipeNavDock(manager: navManager),

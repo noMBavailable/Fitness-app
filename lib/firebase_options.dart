@@ -15,10 +15,17 @@ import 'package:flutter/foundation.dart'
 /// );
 /// ```
 class DefaultFirebaseOptions {
+  
+  // --- PLATFORM TARGET ROUTER ---
+  
+  // Evaluates device target attributes at runtime to serve matching backend connection keys
   static FirebaseOptions get currentPlatform {
+    // Web environments take highest precedence checking priority
     if (kIsWeb) {
       return web;
     }
+    
+    // Switch map distributing options profiles to native compilation targets
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return android;
@@ -40,6 +47,9 @@ class DefaultFirebaseOptions {
     }
   }
 
+  // --- INFRASTRUCTURE CONFIGURATION KEYS MAPS ---
+
+  // Connection configurations mapping targeted directly to web browser build compilation targets
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyDbqhcWcomUQ2De4qZLT-iFZ81hy_SjNJY',
     appId: '1:458869922508:web:9d20831aa1563925b50069',
@@ -49,6 +59,7 @@ class DefaultFirebaseOptions {
     storageBucket: 'fitness-app-932fb.firebasestorage.app',
   );
 
+  // Connection configurations mapping targeted directly to native Android device target packages
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyD5myRJEf_plZUQXd_twWMlrGDDxwLhAts',
     appId: '1:458869922508:android:655a8476fab13069b50069',
@@ -57,15 +68,17 @@ class DefaultFirebaseOptions {
     storageBucket: 'fitness-app-932fb.firebasestorage.app',
   );
 
+  // Connection configurations mapping targeted directly to Apple iOS hardware platforms
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyC3-Agxae3T_kiLdfepEjdR3zNZmPLmqZ4',
     appId: '1:458869922508:ios:ffe8519f73cb70d0b50069',
     messagingSenderId: '458869922508',
     projectId: 'fitness-app-932fb',
     storageBucket: 'fitness-app-932fb.firebasestorage.app',
-    iosBundleId: 'com.example.fitnessFlutterPn',
+    iosBundleId: 'com.example.fitnessFlutterPn', // Registers specific native bundle IDs
   );
 
+  // Connection configurations mapping targeted directly to desktop macOS workstations environments
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyC3-Agxae3T_kiLdfepEjdR3zNZmPLmqZ4',
     appId: '1:458869922508:ios:ffe8519f73cb70d0b50069',
@@ -75,6 +88,7 @@ class DefaultFirebaseOptions {
     iosBundleId: 'com.example.fitnessFlutterPn',
   );
 
+  // Connection configurations mapping targeted directly to native Windows operating system distributions
   static const FirebaseOptions windows = FirebaseOptions(
     apiKey: 'AIzaSyDbqhcWcomUQ2De4qZLT-iFZ81hy_SjNJY',
     appId: '1:458869922508:web:0c146e0042a9b198b50069',

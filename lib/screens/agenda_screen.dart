@@ -25,16 +25,19 @@ class AgendaScreen extends StatefulWidget {
 }
 
 class _AgendaScreenState extends State<AgendaScreen> with SingleTickerProviderStateMixin {
-  CalendarFormat _calendarFormat = CalendarFormat.month; 
-  DateTime _focusedDay = DateTime.now();
-  DateTime? _selectedDay;
+  // --- STATE VARIABLES ---
+  CalendarFormat _calendarFormat = CalendarFormat.month; // Displays standard grid view
+  DateTime _focusedDay = DateTime.now();                 // Current visible calendar month target
+  DateTime? _selectedDay;                                // User clicked tracking date target
 
+  // Animation controllers for custom visual entry curves
   AnimationController? _controller;
   late Animation<double> _pulseAnimation;
 
   @override
   void initState() {
     super.initState();
+    // Instantiates UI micro-interaction controllers on startup
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
@@ -44,6 +47,7 @@ class _AgendaScreenState extends State<AgendaScreen> with SingleTickerProviderSt
       TweenSequenceItem(tween: Tween(begin: 1.15, end: 1.0), weight: 50),
     ]).animate(CurvedAnimation(parent: _controller!, curve: Curves.easeInOut));
 
+    // Delays execution slightly to let layout render before firing animations
     Future.delayed(const Duration(milliseconds: 400), () {
       if (mounted && _controller != null) {
         _controller!.forward();
@@ -53,10 +57,13 @@ class _AgendaScreenState extends State<AgendaScreen> with SingleTickerProviderSt
 
   @override
   void dispose() {
-    _controller?.dispose();
+    _controller?.dispose(); // Garbage collection cleanup to maximize device performance
     super.dispose();
   }
 
+  // --- OVERLAY INTERFACES ---
+  
+  // Displays popup choice pane allowing user to allocate a workout layout to selected calendar days
   void _showWorkoutPicker({Workout? workoutToReplace}) {
     showModalBottomSheet(
       context: context,
@@ -66,12 +73,13 @@ class _AgendaScreenState extends State<AgendaScreen> with SingleTickerProviderSt
       ),
       builder: (context) => Center(
         child: Container(
-          // FIX: Constrains the popup sheet content on desktop views as well
+          // Bounds the pop-up picker layout columns to a strict 450px maxWidth footprint on browser viewports
           constraints: BoxConstraints(maxWidth: kIsWeb ? 450 : double.infinity),
           height: MediaQuery.of(context).size.height * 0.7,
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 20),
           child: Column(
             children: [
+              // Picker Header Actions Row
               Row(
                 children: [
                   IconButton(
@@ -86,10 +94,12 @@ class _AgendaScreenState extends State<AgendaScreen> with SingleTickerProviderSt
                       ),
                     ),
                   ),
-                  const SizedBox(width: 48), 
+                  const SizedBox(width: 48), // Balance spacing matching trailing width elements
                 ],
               ),
               const Divider(height: 25),
+              
+              // Selectable Routine Items Feed Grid
               Expanded(
                 child: ListenableBuilder(
                   listenable: widget.workoutManager,
@@ -116,12 +126,14 @@ class _AgendaScreenState extends State<AgendaScreen> with SingleTickerProviderSt
                             onTap: () async {
                               final date = _selectedDay ?? _focusedDay;
                               
+                              // If replacing a current list element entry, wipe old index from tracking stack first
                               if (workoutToReplace != null) {
                                 await widget.agendaManager.removeWorkoutFromDay(date, workoutToReplace);
                               }
                               
+                              // Persist new scheduling properties payload mapping straight to Firestore database
                               await widget.agendaManager.scheduleWorkout(date, workout);
-                              if (mounted) Navigator.pop(context);
+                              if (mounted) Navigator.pop(context); // Dismiss picker pane safely
                             },
                           ),
                         );
@@ -137,14 +149,15 @@ class _AgendaScreenState extends State<AgendaScreen> with SingleTickerProviderSt
     );
   }
 
+  // --- MAIN WIDGET ENGINE RENDERER ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFEEEEEE), 
-      // FIX: Wrap the FAB setup within a responsive center container block alignment check
+      // Floating Addition Shortcut: Opens picker menu directly from background screen
       floatingActionButton: Center(
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 450),
+          constraints: const BoxConstraints(maxWidth: 450), // Keeps target aligned on Desktop column guidelines
           alignment: Alignment.bottomRight,
           padding: const EdgeInsets.only(bottom: 100, right: 16),
           child: _controller == null 
@@ -180,16 +193,16 @@ class _AgendaScreenState extends State<AgendaScreen> with SingleTickerProviderSt
         children: [
           Column(
             children: [
-              // Keep top bar filling 100% full screen layout parameters
-              const CustomHeader(title: "Agenda"),
+              const CustomHeader(title: "Agenda"), // Full layout header block
 
               Expanded(
                 child: Center(
                   child: Container(
-                    // FIX: Constrains the main calendar matrix and calendar event lists to 450px on web browsers
+                    // Responsive Rule: Keeps calendar grid clamped nicely on Web views, adapts full on mobile screen
                     constraints: BoxConstraints(maxWidth: kIsWeb ? 450 : double.infinity),
                     child: Column(
                       children: [
+                        // Core Interactive Matrix Module Wrapper
                         ListenableBuilder(
                           listenable: widget.agendaManager,
                           builder: (context, _) {
@@ -201,11 +214,13 @@ class _AgendaScreenState extends State<AgendaScreen> with SingleTickerProviderSt
                               headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true),
                               selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                               onDaySelected: (selectedDay, focusedDay) {
+                                // Update selection pointers when tracking metrics maps capture an interaction event
                                 setState(() {
                                   _selectedDay = selectedDay;
                                   _focusedDay = focusedDay;
                                 });
                               },
+                              // Event Markers Loader: References backend data mapping flags to drop dots on active schedule tracks
                               eventLoader: (day) => widget.agendaManager.getWorkoutsForDay(day),
                               calendarStyle: const CalendarStyle(
                                 markerDecoration: BoxDecoration(color: Color.fromARGB(255, 0, 0, 0), shape: BoxShape.circle),
@@ -216,6 +231,8 @@ class _AgendaScreenState extends State<AgendaScreen> with SingleTickerProviderSt
                           }
                         ),
                         const Divider(),
+                        
+                        // Foot-Section Feed Grid list tracking target daily schedule indexes
                         Expanded(
                           child: ListenableBuilder(
                             listenable: widget.agendaManager,
@@ -230,7 +247,7 @@ class _AgendaScreenState extends State<AgendaScreen> with SingleTickerProviderSt
             ],
           ),
           
-          // Navigation Dock continues to span full width layout seamlessly
+          // Floating layout docking element alignment parameters
           Align(
             alignment: const Alignment(0, 0.92),
             child: SwipeNavDock(manager: widget.navManager),
@@ -240,6 +257,9 @@ class _AgendaScreenState extends State<AgendaScreen> with SingleTickerProviderSt
     );
   }
 
+  // --- SUB-ELEMENT RENDERING FACTORIES ---
+  
+  // Compiles individual scheduled event feed rows with swipe-dismiss action support
   Widget _buildWorkoutList() {
     final selectedDate = _selectedDay ?? _focusedDay;
     final workouts = widget.agendaManager.getWorkoutsForDay(selectedDate);
@@ -255,8 +275,9 @@ class _AgendaScreenState extends State<AgendaScreen> with SingleTickerProviderSt
         final workout = workouts[index];
 
         return Dismissible(
+          // Combines ID strings with date millisecond timestamps to compile non-colliding key parameters
           key: Key('${workout.id}_${selectedDate.millisecondsSinceEpoch}'),
-          direction: DismissDirection.endToStart,
+          direction: DismissDirection.endToStart, // Restricts delete gesture swiping strictly to left directions
           background: Container(
             color: Colors.red,
             alignment: Alignment.centerRight,
@@ -264,10 +285,11 @@ class _AgendaScreenState extends State<AgendaScreen> with SingleTickerProviderSt
             child: const Icon(Icons.delete, color: Colors.white),
           ),
           onDismissed: (direction) {
+            // Instantly trigger structural deletion maps processing pipeline via cloud service managers
             widget.agendaManager.removeWorkoutFromDay(selectedDate, workout);
           },
           child: ListTile(
-            onTap: () => _showWorkoutPicker(workoutToReplace: workout), 
+            onTap: () => _showWorkoutPicker(workoutToReplace: workout), // Tap action triggers substitution flow
             leading: const Icon(Icons.fitness_center, color: Color(0xFF1A1A1A)),
             title: Text(workout.name, style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text("${workout.selectedExercises.length} exercises - Tap to change"),

@@ -20,24 +20,28 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Check for today's workout
+    // 1. Fetch scheduled routines for the current calendar timestamp day
     final todayWorkouts = agendaManager.getWorkoutsForDay(DateTime.now());
     final bool hasWorkoutToday = todayWorkouts.isNotEmpty;
+    
+    // Dynamic naming assignment fallback string if no data matches today's date
     final String nextWorkoutTitle = hasWorkoutToday ? todayWorkouts.first.name : "None scheduled";
 
     return Scaffold(
       backgroundColor: const Color(0xFFEEEEEE), 
       body: Column(
         children: [
-          const CustomHeader(title: "Home"),
+          const CustomHeader(title: "Home"), // Global full-width top navigation banner block
 
           Expanded(
             child: Center(
               child: Container(
+                // RESPONSIVE LAYOUT CLAUSE: Clamps scrollable viewport strictly to 450px on desktop web systems
                 constraints: const BoxConstraints(maxWidth: 450),
                 child: ListView(
                   padding: const EdgeInsets.all(20),
                   children: [
+                    // --- TARGET ROUTINE FEEDBACK SECTION ---
                     Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -58,6 +62,8 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 30),
+                    
+                    // --- ACTIONS HUB BOX CONTAINER ---
                     Center(
                       child: Container(
                         padding: const EdgeInsets.all(12),
@@ -69,9 +75,11 @@ class HomeScreen extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            // Primary Action Button: Fires up tracking screens or shifts layout index pointers
                             ElevatedButton(
                               onPressed: () {
                                 if (hasWorkoutToday) {
+                                  // Pushes user into a dedicated screen running active session timers
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -83,6 +91,7 @@ class HomeScreen extends StatelessWidget {
                                     ),
                                   );
                                 } else {
+                                  // Navigates user straight to Selection menus to allocate templates
                                   navManager.setIndex(4);
                                 }
                               },
@@ -96,8 +105,10 @@ class HomeScreen extends StatelessWidget {
                               child: Text(hasWorkoutToday ? "Start workout" : "Choose workout"),
                             ),
                             const SizedBox(width: 20),
+                            
+                            // Secondary Action Button: Navigates back up to calendar views
                             ElevatedButton(
-                              onPressed: () => navManager.setIndex(1),
+                              onPressed: () => navManager.setIndex(1), // Index pointer targeting Agenda tabs
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.white,
                                 foregroundColor: Colors.black,
@@ -113,17 +124,17 @@ class HomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 40), 
                     
-                    // FITNESS CONTAINER WITH A THICKER BORDER
+                    // --- CENTRAL GRAPHIC DISPLAY ELEMENT ---
                     Center(
                       child: Container(
                         width: 230,
                         height: 230,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.5), // Subtle background fill
-                          borderRadius: BorderRadius.circular(35), // Rounded modern frame
+                          color: Colors.white.withValues(alpha: 0.5), 
+                          borderRadius: BorderRadius.circular(35), 
                           border: Border.all(
-                            color: Colors.black.withValues(alpha: 0.6), // Darkened the stroke contrast slightly
-                            width: 5, // MODIFIED: Changed from 2 to 5 for a much bolder layout highlight look
+                            color: Colors.black.withValues(alpha: 0.6), 
+                            width: 5, // Thick stroke highlight outline styling
                           ),
                         ),
                         child: Icon(

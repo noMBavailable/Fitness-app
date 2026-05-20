@@ -22,6 +22,7 @@ import 'screens/notes_screen.dart';
 import 'screens/workout_selection_screen.dart';
 import 'screens/auth_screen.dart';
 
+// --- INITIALIZATION ---
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -36,7 +37,7 @@ class FitnessApp extends StatefulWidget {
 }
 
 class _FitnessAppState extends State<FitnessApp> {
-  // Persistence Layer: Using late final is fine here as they are initialized in initState
+  // Persistence Layer variables assigned via initState hooks
   late final NavManager _navManager;
   late final WeightManager _weightManager;
   late final ExerciseManager _exerciseManager;
@@ -54,7 +55,7 @@ class _FitnessAppState extends State<FitnessApp> {
     _agendaManager = AgendaManager();
     _notesManager = NotesManager();
 
-    // Force login on startup
+    // Forced sign-out command ensures a clean identity verification cycle on boots
     FirebaseAuth.instance.signOut();
   }
 
@@ -73,7 +74,7 @@ class _FitnessAppState extends State<FitnessApp> {
           }
 
           if (snapshot.hasData) {
-            // FIX: Triggers immediate data-reloads to refresh local memory state on login switch
+            // PostFrameCallback synchronizes cloud database structures immediately post layout execution
             WidgetsBinding.instance.addPostFrameCallback((_) {
               _weightManager.loadWeightHistory();
               _exerciseManager.loadExercises();
@@ -97,10 +98,11 @@ class _FitnessAppState extends State<FitnessApp> {
   }
 }
 
+// --- CORE APPLICATION SHELL ---
 class FitnessHomeScreen extends StatefulWidget {
   final NavManager navManager;
   final WeightManager weightManager;
-  final ExerciseManager exerciseManager;
+  final ExerciseManager exerciseManager; // FIX: Kept as ExerciseManager instead of a generic dynamic cast to preserve compile-time types safety guidelines
   final WorkoutManager workoutManager;
   final AgendaManager agendaManager;
   final NotesManager notesManager;
@@ -120,23 +122,25 @@ class FitnessHomeScreen extends StatefulWidget {
 }
 
 class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
+  // Modal toggle switches determining display tracks for floating overlay boxes
   bool _showWeightModal = false;
   bool _showExerciseModal = false;
 
-  // FIX: Removed 'late' and initialized with 0 to prevent Hot Reload crashes
+  // Tracker index avoiding state compilation initialization failures
   int _actualCurrentPage = 0;
 
   @override
   void initState() {
     super.initState();
 
-    // Initial mapping of indices
+    // Mapping active dashboard positions variables
     _translateIndex(widget.navManager.currentIndex);
 
     widget.navManager.addListener(_handleNavChange);
   }
 
-  // Internal helper to ensure we never hit a RangeError or LateInitializationError
+  // --- TRANSITION TRANSLATOR MAPS ---
+  // Decodes active index pointers into contextual layout view components or overlays
   void _translateIndex(int index) {
     setState(() {
       if (index == 2) {
@@ -146,6 +150,7 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
         _showExerciseModal = true;
         _showWeightModal = false;
       } else {
+        // Clear layout overlays flags if regular target page indexes are parsed
         _showWeightModal = false;
         _showExerciseModal = false;
 
@@ -163,7 +168,7 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
             _actualCurrentPage = 4; // NotesScreen
             break;
           default:
-            _actualCurrentPage = 0; // Safe fallback
+            _actualCurrentPage = 0; // Safe default recovery path fallback state
         }
       }
     });
@@ -182,7 +187,7 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // dynamicPages (Indices 0, 1, 2, 3, 4)
+    // Array cataloging baseline background routes pages
     final List<Widget> dynamicPages = [
       HomeScreen(
         agendaManager: widget.agendaManager,
@@ -213,6 +218,7 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
       backgroundColor: Colors.grey[200],
       body: Stack(
         children: [
+          // Background Intersector Layer: Clears popup visibility metrics if tapping background view fields
           GestureDetector(
             onTap: () {
               if (_showWeightModal || _showExerciseModal) {
@@ -220,7 +226,7 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
                   _showWeightModal = false;
                   _showExerciseModal = false;
                 });
-                // Synchronize back to match the active background screen index mapping!
+                // Re-aligns highlighted bottom navigation highlights to match currently visible screen layout indexes
                 int restoredNavIndex = _actualCurrentPage;
                 if (_actualCurrentPage == 3) restoredNavIndex = 4;
                 if (_actualCurrentPage == 4) restoredNavIndex = 5;
@@ -229,6 +235,8 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
             },
             child: dynamicPages[_actualCurrentPage],
           ),
+          
+          // --- OVERLAYS PRESENTATION BLOCK ---
           if (_showWeightModal)
             Align(
               alignment: const Alignment(0, 0.65),
@@ -241,11 +249,13 @@ class _FitnessHomeScreenState extends State<FitnessHomeScreen> {
             Align(
               alignment: const Alignment(0, 0.68),
               child: ExerciseModal(
-                manager: widget.exerciseManager,
+                manager: widget.exerciseManager, // Clean typing parameter match avoids previous object reference casting failures
                 manager2: widget.workoutManager,
                 navManager: widget.navManager,
               ),
             ),
+            
+          // --- PRIMARY CORE CONTROL CONTAINER BAR DOCK ---
           Align(
             alignment: const Alignment(0, 0.92),
             child: SwipeNavDock(manager: widget.navManager),

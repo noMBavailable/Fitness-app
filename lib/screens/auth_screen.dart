@@ -11,15 +11,18 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
+  // --- FORM INPUT CONTROLLERS ---
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _isLogin = true;
-  bool _rememberMe = false; // Tracks the checkbox state
+  
+  // --- INTERFACE STATE FLAGS ---
+  bool _isLogin = true;      // Toggles view mode between Login form and Sign Up registration form
+  bool _rememberMe = false;  // Tracks the user's consent status for local asset credential saving
 
   @override
   void initState() {
     super.initState();
-    _loadSavedCredentials();
+    _loadSavedCredentials(); // Auto-populate input boxes on screen creation if records exist
   }
 
   @override
@@ -29,12 +32,15 @@ class _AuthScreenState extends State<AuthScreen> {
     super.dispose();
   }
 
-  // Loads the email and password from local storage if "Remember Me" was checked
+  // --- LOCAL PERSISTENCE STORAGE ---
+
+  // Fetches cached strings from the on-device local storage partition
   Future<void> _loadSavedCredentials() async {
     final prefs = await SharedPreferences.getInstance();
     final savedEmail = prefs.getString('remembered_email') ?? '';
     final savedPassword = prefs.getString('remembered_password') ?? '';
 
+    // If string records exist, dynamically populate text fields and toggle the checkmark flag active
     if (savedEmail.isNotEmpty && savedPassword.isNotEmpty) {
       setState(() {
         _emailController.text = savedEmail;
@@ -44,68 +50,72 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  // Saves or clears the credentials depending on the checkbox state
+  // Writes or deletes target credential strings in on-device storage depending on checkout flag conditions
   Future<void> _handleCredentialsSaving() async {
     final prefs = await SharedPreferences.getInstance();
     if (_rememberMe) {
       await prefs.setString('remembered_email', _emailController.text.trim());
       await prefs.setString('remembered_password', _passwordController.text.trim());
     } else {
+      // If unchecked, strip key values from storage keys map to forget user records
       await prefs.remove('remembered_email');
       await prefs.remove('remembered_password');
     }
   }
 
+  // --- INTEGRATION WORKFLOW BACKEND ROUTING ---
+  
+  // Dispatches form values directly to Firebase Cloud Authentication service maps
   Future<void> _submit() async {
     try {
       if (_isLogin) {
-        // Log in an existing user
+        // LOGIN TARGET: Validate against existing cloud identity profiles registers
         await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
         
-        // Save credentials locally if "Remember Me" is enabled
-        await _handleCredentialsSaving();
+        await _handleCredentialsSaving(); // Sync remember state selection to device memory
         return; 
       } else {
-        // Sign up a brand new user (Firebase will naturally log them in instantly)
+        // SIGNUP TARGET: Provisions a completely fresh account inside Firebase cloud buckets
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
 
-        // Save credentials locally if "Remember Me" is enabled during signup
-        await _handleCredentialsSaving();
+        await _handleCredentialsSaving(); // Sync remember state selection to device memory
         return;
       }
     } catch (e) {
       if (!mounted) return;
+      // Throw clear system error messages on-screen if login credentials/inputs are invalid
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
       );
     }
   }
 
+  // --- SCREEN RENDERING INTERFACES ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100], // Clean background color behind the web card frame
+      backgroundColor: Colors.grey[100], // Muted presentation backdrop color behind web frame elements
       body: Center(
         child: Container(
-          // FIX: Clamps layout form inputs to 450px wide max on desktop web interfaces, scales to full on mobile
+          // RESPONSIVE LAYOUT CLAUSE: Caps view container strictly to 450px on desktop web browsers, stretches full on mobile
           constraints: BoxConstraints(maxWidth: kIsWeb ? 450 : double.infinity),
           padding: const EdgeInsets.all(25.0),
           margin: EdgeInsets.all(kIsWeb ? 20.0 : 0.0),
           decoration: BoxDecoration(
-            color: kIsWeb ? Colors.white : Colors.transparent,
+            color: kIsWeb ? Colors.white : Colors.transparent, // Displays input fields inside floating cards on web
             borderRadius: BorderRadius.circular(kIsWeb ? 20 : 0),
             boxShadow: kIsWeb 
                 ? [const BoxShadow(color: Colors.black12, blurRadius: 15, spreadRadius: 2)] 
                 : null,
           ),
           child: Column(
-            mainAxisSize: MainAxisSize.min, // Packs elements vertically tight in desktop viewboxes
+            mainAxisSize: MainAxisSize.min, // Clamps vertical sheet sizes on desktop window viewports
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
@@ -113,19 +123,23 @@ class _AuthScreenState extends State<AuthScreen> {
                 style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
+              
+              // Email Field Form Entry Node
               TextField(
                 controller: _emailController,
                 decoration: const InputDecoration(labelText: "Email"),
                 keyboardType: TextInputType.emailAddress,
               ),
+              
+              // Password Field Form Entry Node
               TextField(
                 controller: _passwordController,
                 decoration: const InputDecoration(labelText: "Password"),
-                obscureText: true,
+                obscureText: true, // Hides typed character inputs for field security guidelines
               ),
               const SizedBox(height: 10),
               
-              // REMEMBER ME CHECKBOX ROW
+              // REMEMBER ME CHECKBOX ROW LAYER
               Row(
                 children: [
                   SizedBox(
@@ -150,8 +164,10 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
               
               const SizedBox(height: 15),
+              
+              // Form dispatch confirmation action module
               SizedBox(
-                width: double.infinity, // Stretches button width to match input limits evenly
+                width: double.infinity, // Automatically stretches block sizes to fit desktop boundaries neatly
                 child: ElevatedButton(
                   onPressed: _submit,
                   style: ElevatedButton.styleFrom(
@@ -164,6 +180,8 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
               ),
               const SizedBox(height: 10),
+              
+              // Authentication form mode toggle hyperlink module
               TextButton(
                 onPressed: () => setState(() => _isLogin = !_isLogin),
                 child: Text(

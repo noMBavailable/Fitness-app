@@ -25,17 +25,18 @@ class EditWorkoutScreen extends StatefulWidget {
 }
 
 class _EditWorkoutScreenState extends State<EditWorkoutScreen> with SingleTickerProviderStateMixin {
+  // --- STATE CONTROLLERS ---
   final _nameController = TextEditingController();
-  List<Exercise> _tempSelected = [];
+  List<Exercise> _tempSelected = []; // Temporarily holds checkboxes state choices in the sheet
 
-  // Animation setup
+  // --- ANIMATION PROPERTIES ---
   AnimationController? _controller;
   late Animation<double> _pulseAnimation;
 
   @override
   void initState() {
     super.initState();
-
+    // Instantiates a smooth loops animation track for the creation button shortcut
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
@@ -46,7 +47,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> with SingleTicker
       TweenSequenceItem(tween: Tween(begin: 1.15, end: 1.0), weight: 50),
     ]).animate(CurvedAnimation(parent: _controller!, curve: Curves.easeInOut));
 
-    _controller!.repeat();
+    _controller!.repeat(); // Continuously loops animation pulse scale states
   }
 
   @override
@@ -56,30 +57,35 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> with SingleTicker
     super.dispose();
   }
 
+  // --- OVERLAY SHEET EDIT MANAGER ---
+  
+  // Displays an internal modal bottom sheet configured for creating or editing routines
   void _showWorkoutForm({Workout? workout}) {
+    // If an object is passed, fill text fields with existing properties (Edit Mode)
     if (workout != null) {
       _nameController.text = workout.name;
       _tempSelected = List.from(workout.selectedExercises);
     } else {
+      // Clear controllers to start fresh (Create Mode)
       _nameController.clear();
       _tempSelected = [];
     }
 
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
+      isScrollControlled: true, // Allows sheet to scale text fields above soft keyboards
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => Center(
         child: Container(
-          // Bounds the popup workout editor sheet inputs cleanly on web screens
+          // Bounds the popup sheet inputs panel width cleanly on web displays
           constraints: BoxConstraints(maxWidth: kIsWeb ? 450 : double.infinity),
           padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom, // Pushes elements above device keyboards
             left: 20, right: 20, top: 20,
           ),
-          child: StatefulBuilder(
+          child: StatefulBuilder( // Enables internal state management updates inside the sheet loop
             builder: (context, setModalState) => Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -91,6 +97,8 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> with SingleTicker
                 ),
                 const SizedBox(height: 10),
                 const Text("Select Exercises:"),
+                
+                // Scrollable Checkbox feed container
                 SizedBox(
                   height: 200,
                   child: ListView.builder(
@@ -103,11 +111,12 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> with SingleTicker
                         title: Text(ex.name),
                         value: isSelected,
                         onChanged: (val) {
+                          // Updates local state hooks specifically inside the bottom sheet view
                           setModalState(() {
                             if (val == true) {
-                              _tempSelected.add(ex);
+                              _tempSelected.add(ex); // Append exercise instance reference
                             } else {
-                              _tempSelected.removeWhere((e) => e.id == ex.id);
+                              _tempSelected.removeWhere((e) => e.id == ex.id); // Strip index
                             }
                           });
                         },
@@ -119,15 +128,17 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> with SingleTicker
                   onPressed: () async {
                     if (_nameController.text.isNotEmpty) {
                       if (workout == null) {
+                        // Route payload straight to database create collection path
                         await widget.workoutManager.addWorkout(_nameController.text, _tempSelected);
                       } else {
+                        // Target existing document snapshot for update execution path
                         await widget.workoutManager.updateWorkout(
                           workout.id,
                           _nameController.text,
                           _tempSelected,
                         );
                       }
-                      if (mounted) Navigator.pop(context);
+                      if (mounted) Navigator.pop(context); // Close editing template panel safely
                     }
                   },
                   child: const Text("Save Workout"),
@@ -141,20 +152,22 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> with SingleTicker
     );
   }
 
+  // --- CORE VIEW TREE BUILDER ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFEEEEEE),
-      // Keeps the pulsed workout-addition button inside the 450px content column layout zone on desktop screens
+      
+      // Floating Addition Button shortcut container
       floatingActionButton: Center(
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 450),
+          constraints: const BoxConstraints(maxWidth: 450), // Keeps button aligned perfectly inside desktop viewport columns
           alignment: Alignment.bottomRight,
           padding: const EdgeInsets.only(bottom: 100, right: 16),
           child: _controller == null 
             ? const SizedBox.shrink() 
             : ScaleTransition(
-                scale: _pulseAnimation,
+                scale: _pulseAnimation, // Integrates looping pulse animation constraints
                 child: Container(
                   height: 75, width: 75,
                   decoration: BoxDecoration(
@@ -171,7 +184,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> with SingleTicker
                     ],
                   ),
                   child: FloatingActionButton(
-                    onPressed: () => _showWorkoutForm(),
+                    onPressed: () => _showWorkoutForm(), // Launches create routine bottom sheet
                     backgroundColor: Colors.transparent,
                     elevation: 0, highlightElevation: 0,
                     child: const Icon(Icons.add, color: Colors.white, size: 35),
@@ -188,7 +201,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> with SingleTicker
               Expanded(
                 child: Center(
                   child: Container(
-                    // Restricts the core list item configurations to 450px wide layout boundaries on web targets
+                    // Responsive width lock rule: Restricts content rows width to 450px on desktop web systems
                     constraints: BoxConstraints(maxWidth: kIsWeb ? 450 : double.infinity),
                     child: ListenableBuilder(
                       listenable: widget.workoutManager,
@@ -205,7 +218,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> with SingleTicker
                           itemBuilder: (context, index) {
                             final workout = workouts[index];
                             
-                            // Identify if this workout item row is a system-wide premade template asset
+                            // Flag: Identifies if row index string keys match system premade template constants
                             final isPremade = workout.id.startsWith('w_pre_');
 
                             return ListTile(
@@ -215,12 +228,12 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> with SingleTicker
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  // Edit Button: Always available for both premade and custom workouts
+                                  // Edit Button: Always active and operational for all entries
                                   IconButton(
                                     icon: const Icon(Icons.edit),
                                     onPressed: () => _showWorkoutForm(workout: workout),
                                   ),
-                                  // Delete Action Container: Show red trash button for custom, lock icon for premade templates
+                                  // Delete Actions Handler: Custom items show red trash icons, premade items show locked indicators
                                   isPremade
                                       ? const Padding(
                                           padding: EdgeInsets.symmetric(horizontal: 12.0),
@@ -244,6 +257,8 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> with SingleTicker
               ),
             ],
           ),
+          
+          // Navigation Dock container alignment properties layout rules
           Align(
             alignment: const Alignment(0, 0.92),
             child: SwipeNavDock(manager: widget.navManager),

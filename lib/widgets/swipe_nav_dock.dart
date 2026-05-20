@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart'
-    show kIsWeb; // Added for web environment checking
+import 'package:flutter/foundation.dart' show kIsWeb; // Added for web environment checking
 import '../managers/nav_manager.dart';
 
 class SwipeNavDock extends StatelessWidget {
@@ -10,7 +9,7 @@ class SwipeNavDock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color navBgColor = Color(0xFF1A1A1A);
+    const Color navBgColor = Color(0xFF1A1A1A); // Fixed dark navigation bar canvas theme color
 
     return Container(
       height: 75,
@@ -21,13 +20,13 @@ class SwipeNavDock extends StatelessWidget {
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 10,
-            offset: const Offset(0, -2),
+            offset: const Offset(0, -2), // Subtle shadow offset casting upward above the bar
           ),
         ],
       ),
       child: Stack(
         children: [
-          // 1. The Scrollable Icons with a ShaderMask
+          // LAYER 1: The scrollable nav options row coupled with an edge-fade ShaderMask
           ShaderMask(
             shaderCallback: (Rect bounds) {
               return const LinearGradient(
@@ -39,28 +38,26 @@ class SwipeNavDock extends StatelessWidget {
                   Colors.black,
                   Colors.transparent,
                 ],
-                stops: [0.0, 0.15, 0.85, 1.0], // Fades icons out at the edges
+                // Fades out items visually at the absolute 15% edge thresholds of the view track canvas
+                stops: [0.0, 0.15, 0.85, 1.0], 
               ).createShader(bounds);
             },
-            blendMode: BlendMode.dstIn, // Uses the gradient to "clip" the icons
+            blendMode: BlendMode.dstIn, // Combines alpha masks to clip horizontal edge contents cleanly
             child: ListenableBuilder(
-              listenable: manager,
+              listenable: manager, // Listens to navigation index changes to dynamically redraw tabs
               builder: (context, _) {
-                // Centering the list items on desktop screens so they don't look awkwardly left-aligned
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Expanded(
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
-                        // Dynamically scales the padding so the buttons sit beautifully centered on wide displays
+                        // RESPONSIVE CALCULATION: Centers scroll list elements on desktop screens while maintaining flat padding on mobile
                         padding: EdgeInsets.symmetric(
                           horizontal: kIsWeb
                               ? (MediaQuery.of(context).size.width > 600
-                                    ? (MediaQuery.of(context).size.width -
-                                              450) /
-                                          2
-                                    : 20)
+                                  ? (MediaQuery.of(context).size.width - 450) / 2
+                                  : 20)
                               : 20,
                         ),
                         itemCount: manager.items.length,
@@ -81,7 +78,7 @@ class SwipeNavDock extends StatelessWidget {
             ),
           ),
 
-          // 2. Pure Icons (Left and Right Navigation Indicators) - Only shown on Mobile
+          // LAYER 2: Side arrow indicators to hint at horizontal scroll availability (Mobile only)
           if (!kIsWeb) ...[
             const Align(
               alignment: Alignment.centerLeft,
@@ -111,33 +108,37 @@ class SwipeNavDock extends StatelessWidget {
     );
   }
 
+  // --- COMPONENT FACTORY BUILDER ---
+  
+  // Assembles individual specific navigation buttons with structural validation hooks
   Widget _buildNavItem(
     BuildContext context,
     int index,
     IconData icon,
     String label,
   ) {
-    bool isSelected = manager.currentIndex == index;
+    bool isSelected = manager.currentIndex == index; // Checks active focus status mappings
+    
     return GestureDetector(
       onTap: () {
-        // 1. Change the tab index like normal
+        // 1. Shift root layout navigation pages focus indices settings pointers
         manager.setIndex(index);
 
-        // 2. FIX: If this navbar button is pressed inside a pushed full-screen route
-        // (like the Graph screen or Edit screen), close it immediately to reveal the chosen tab!
+        // 2. STACK CORRECTION FIX: If this navigation selection event is triggered while a sub-workspace 
+        // view context is active (such as custom editing maps), pop it off immediately to reveal the targeted screen base layout.
         if (Navigator.canPop(context)) {
           Navigator.pop(context);
         }
       },
-      behavior: HitTestBehavior.opaque,
+      behavior: HitTestBehavior.opaque, // Expands interaction space parameters across empty element boundaries
       child: SizedBox(
-        width: 80,
+        width: 80, // Fixed horizontal column sizing tracking grid
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
-              color: isSelected ? Colors.blue : Colors.white,
+              color: isSelected ? Colors.blue : Colors.white, // Active buttons illuminate blue
               size: 26,
             ),
             const SizedBox(height: 4),

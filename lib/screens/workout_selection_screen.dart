@@ -22,23 +22,24 @@ class WorkoutSelectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Check if anything is scheduled for today
+    // 1. Query agenda logs to find routines mapped exactly to today's date timestamp
     final todayWorkouts = agendaManager.getWorkoutsForDay(DateTime.now());
 
     return Column(
       children: [
-        // Header bar fills 100% widescreen width on web seamlessly
+        // Top full-width navigation header block
         const CustomHeader(title: "Start Workout"),
         
         Expanded(
           child: Center(
             child: Container(
-              // FIX: Restricts list views and exercise cards layout to half size (450px) on desktop web targets
+              // RESPONSIVE BLOCK RULE: Caps central selection cards layout grid to 450px on web browsers
               constraints: BoxConstraints(maxWidth: kIsWeb ? 450 : double.infinity),
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 10, 20, 120),
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 120), // Padding buffer lifts rows clear of navigation docks
                 children: [
-                  // SECTION 1: TODAY'S AGENDA
+                  
+                  // --- SECTION 1: TODAY'S AGENDA ENTRIES ---
                   const Row(
                     children: [
                       Icon(Icons.calendar_today_outlined, size: 18, color: Colors.blue),
@@ -48,6 +49,8 @@ class WorkoutSelectionScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
+                  
+                  // Render placeholder information tile if the calendar schedule returns empty mappings
                   if (todayWorkouts.isEmpty)
                     Card(
                       elevation: 0,
@@ -61,6 +64,7 @@ class WorkoutSelectionScreen extends StatelessWidget {
                       ),
                     )
                   else
+                    // Map active array snapshots directly into blue agenda styling components
                     ...todayWorkouts.map((workout) => _buildWorkoutTile(context, workout, isPlanned: true)),
 
                   const Padding(
@@ -68,7 +72,7 @@ class WorkoutSelectionScreen extends StatelessWidget {
                     child: Divider(thickness: 1, height: 1),
                   ),
 
-                  // SECTION 2: ALL WORKOUTS
+                  // --- SECTION 2: COMPREHENSIVE ROUTINES FEED ---
                   const Row(
                     children: [
                       Icon(Icons.format_list_bulleted_rounded, size: 18, color: Colors.grey),
@@ -78,9 +82,12 @@ class WorkoutSelectionScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
+                  
+                  // Fallback string display block if user profile entries maps are completely void
                   if (workoutManager.workouts.isEmpty)
                     const Center(child: Text("No workouts created yet."))
                   else
+                    // Build row elements using standard layout values mapping parameters
                     ...workoutManager.workouts.map((workout) => _buildWorkoutTile(context, workout)),
                 ],
               ),
@@ -91,6 +98,9 @@ class WorkoutSelectionScreen extends StatelessWidget {
     );
   }
 
+  // --- COMPONENT COMPILER FACTORIES ---
+  
+  // Assembles standard interactive list items with conditional accent coloring features
   Widget _buildWorkoutTile(BuildContext context, Workout workout, {bool isPlanned = false}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -105,16 +115,17 @@ class WorkoutSelectionScreen extends StatelessWidget {
         ],
       ),
       child: Material(
+        // Dynamic design conditional formatting: Planned cards turn soft blue, un-planned remain standard white
         color: isPlanned ? const Color(0xFFE3F2FD) : Colors.white,
         borderRadius: BorderRadius.circular(15),
         child: InkWell(
           borderRadius: BorderRadius.circular(15),
-          splashColor: const Color(0xFF00B4DB).withValues(alpha: 0.2),
+          splashColor: const Color(0xFF00B4DB).withValues(alpha: 0.2), // Themed water splash touch animation frame limit rules
           onTap: () {
-            // Provide physical feedback on tap
+            // Trigger device haptic hardware engines to process physics vibration feedback
             HapticFeedback.mediumImpact();
 
-            // Push to ActiveWorkoutScreen and pass the workoutManager
+            // Direct routing instruction context push launching the primary timer engine interface screen
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -130,6 +141,7 @@ class WorkoutSelectionScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             child: Row(
               children: [
+                // Highlight container wrapping core leading status icon assets
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
@@ -142,6 +154,8 @@ class WorkoutSelectionScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
+                
+                // Labels Summary Text Column Layer
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
